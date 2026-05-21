@@ -3,34 +3,64 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronRight,
+  Clock,
   Medal,
   RotateCcw,
   Sparkles,
   Trophy,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
 
-const ANSWER_DELAY_MS = 1500;
+const ANSWER_DELAY_MS = 3000;
+const QUESTION_TIME_SECONDS = 10;
+const TIMER_WARNING_SECONDS = 3;
+const FALLBACK_BACKGROUNDS: GameBackground[] = [
+  {
+    id: "fallback-salute",
+    imageUrl: "/kiosk/peacekeepers-salute.png",
+  },
+  {
+    id: "fallback-formation",
+    imageUrl: "/kiosk/peacekeepers-formation.png",
+  },
+  {
+    id: "fallback-flags",
+    imageUrl: "/kiosk/vietnam-un-flags.png",
+  },
+];
+
+type CheckAnswerResponse = {
+  data?: {
+    isCorrect: boolean;
+    correctAnswer: {
+      id: string;
+      content: string;
+    };
+    explanation: string | null;
+  };
+  error?: string;
+};
 
 function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const slides = backgrounds.length > 0 ? backgrounds : FALLBACK_BACKGROUNDS;
   const activeBackground =
-    backgrounds.length > 0 ? backgrounds[activeIndex % backgrounds.length] : null;
+    slides.length > 0 ? slides[activeIndex % slides.length] : null;
 
   useEffect(() => {
-    if (backgrounds.length <= 1) {
+    if (slides.length <= 1) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      setActiveIndex((index) => (index + 1) % backgrounds.length);
+      setActiveIndex((index) => (index + 1) % slides.length);
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [backgrounds.length]);
+  }, [slides.length]);
 
   return (
     <div className="absolute inset-0 -z-10 overflow-hidden bg-[#071a2f]">
@@ -89,6 +119,35 @@ function LogoBar() {
   );
 }
 
+function FireworksOverlay({ isVisible }: { isVisible: boolean }) {
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {Array.from({ length: 18 }).map((_, index) => (
+        <motion.span
+          key={index}
+          className="absolute h-3 w-3 rounded-full bg-[#ffcd00] shadow-[0_0_22px_rgba(255,205,0,0.95)]"
+          style={{
+            left: `${12 + ((index * 17) % 76)}%`,
+            top: `${18 + ((index * 23) % 52)}%`,
+          }}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{
+            opacity: [0, 1, 0],
+            scale: [0, 1.9, 0.4],
+            x: [0, ((index % 5) - 2) * 34],
+            y: [0, ((index % 4) - 1.5) * 30],
+          }}
+          transition={{ duration: 1.05, ease: "easeOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function GameOverPanel({ onRestart }: { onRestart: () => void }) {
   return (
     <motion.section
@@ -107,8 +166,8 @@ function GameOverPanel({ onRestart }: { onRestart: () => void }) {
         Chưa đạt mốc 80%
       </h1>
       <p className="mt-4 max-w-xl text-base leading-7 text-white/75">
-        Theo luật chơi, khi không vượt qua level hiện tại, tiến trình được đặt
-        lại về Level 1. Hãy bắt đầu lại và chinh phục toàn bộ 5 level.
+        Theo luật chơi, khi không vượt qua cấp độ hiện tại, tiến trình được đặt
+        lại về Cấp độ 1. Hãy bắt đầu lại và chinh phục toàn bộ 5 cấp độ.
       </p>
       <button
         type="button"
@@ -199,6 +258,14 @@ export default function PlayPage() {
   );
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
   const [hasSavedLeaderboard, setHasSavedLeaderboard] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS);
+  const [feedback, setFeedback] = useState<{
+    isCorrect: boolean;
+    correctAnswerId: string;
+    correctAnswer: string;
+    explanation: string | null;
+  } | null>(null);
+  const [showFireworks, setShowFireworks] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progressText = useMemo(
@@ -208,6 +275,11 @@ export default function PlayPage() {
         : "0/0",
     [currentQuestionIndex, questions.length],
   );
+  const isTimerWarning =
+    timeLeft <= TIMER_WARNING_SECONDS &&
+    !feedback &&
+    !isAdvancing &&
+    status === "ready";
 
   useEffect(() => {
     void loadBackgrounds();
@@ -224,6 +296,9 @@ export default function PlayPage() {
     setGameStartedAt(new Date().getTime());
     setTotalCorrectAnswers(0);
     setHasSavedLeaderboard(false);
+    setFeedback(null);
+    setShowFireworks(false);
+    setTimeLeft(QUESTION_TIME_SECONDS);
     await loadQuestions(1);
   }
 
@@ -232,10 +307,13 @@ export default function PlayPage() {
     setSelectedAnswerId(null);
     setIsAdvancing(false);
     setLevelSummary(null);
+    setFeedback(null);
+    setShowFireworks(false);
+    setTimeLeft(QUESTION_TIME_SECONDS);
     await nextLevel();
   }
 
-  async function saveLeaderboardEntry(score: number) {
+  const saveLeaderboardEntry = useCallback(async (score: number) => {
     if (hasSavedLeaderboard) {
       return;
     }
@@ -254,16 +332,65 @@ export default function PlayPage() {
         durationMs: new Date().getTime() - gameStartedAt,
       }),
     });
-  }
+  }, [gameStartedAt, hasSavedLeaderboard]);
 
-  async function handleAnswerClick(answerId: string) {
+  const playAnswerSound = useCallback((isCorrect: boolean) => {
+    const audio = new Audio(isCorrect ? "/sfx/correct.mp3" : "/sfx/wrong.mp3");
+    audio.volume = 0.85;
+    void audio.play().catch(() => undefined);
+  }, []);
+
+  const checkAnswer = useCallback(async (questionId: string, answerId: string | null) => {
+    const response = await fetch("/api/game/check-answer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        questionId,
+        answerId,
+      }),
+    });
+    const payload = (await response.json()) as CheckAnswerResponse;
+
+    if (!response.ok || !payload.data) {
+      return null;
+    }
+
+    return payload.data;
+  }, []);
+
+  const completeQuestion = useCallback(async (answerId: string | null) => {
     if (!currentQuestion || isAdvancing || status === "submitting") {
       return;
     }
 
-    selectAnswer(currentQuestion.id, answerId);
+    if (answerId) {
+      selectAnswer(currentQuestion.id, answerId);
+    }
+
     setSelectedAnswerId(answerId);
     setIsAdvancing(true);
+    setTimeLeft(0);
+    setFeedback(null);
+    setShowFireworks(false);
+
+    const answerResult = await checkAnswer(currentQuestion.id, answerId);
+
+    if (answerResult) {
+      playAnswerSound(answerResult.isCorrect);
+      setFeedback({
+        isCorrect: answerResult.isCorrect,
+        correctAnswerId: answerResult.correctAnswer.id,
+        correctAnswer: answerResult.correctAnswer.content,
+        explanation: answerResult.explanation,
+      });
+
+      if (answerResult.isCorrect) {
+        setShowFireworks(true);
+        window.setTimeout(() => setShowFireworks(false), 1100);
+      }
+    }
 
     window.setTimeout(async () => {
       const isLastQuestion = currentQuestionIndex >= questions.length - 1;
@@ -272,6 +399,9 @@ export default function PlayPage() {
         setCurrentQuestionIndex((index) => index + 1);
         setSelectedAnswerId(null);
         setIsAdvancing(false);
+        setFeedback(null);
+        setShowFireworks(false);
+        setTimeLeft(QUESTION_TIME_SECONDS);
         return;
       }
 
@@ -282,6 +412,8 @@ export default function PlayPage() {
           setIsGameOver(true);
           setSelectedAnswerId(null);
           setIsAdvancing(false);
+          setFeedback(null);
+          setTimeLeft(QUESTION_TIME_SECONDS);
           return;
         }
 
@@ -292,6 +424,8 @@ export default function PlayPage() {
           await createRewardCode();
           setSelectedAnswerId(null);
           setIsAdvancing(false);
+          setFeedback(null);
+          setTimeLeft(QUESTION_TIME_SECONDS);
           return;
         }
 
@@ -301,19 +435,80 @@ export default function PlayPage() {
         );
         setSelectedAnswerId(null);
         setIsAdvancing(false);
+        setFeedback(null);
+        setTimeLeft(QUESTION_TIME_SECONDS);
       } catch {
         setSelectedAnswerId(null);
         setIsAdvancing(false);
+        setFeedback(null);
+        setTimeLeft(QUESTION_TIME_SECONDS);
       }
     }, ANSWER_DELAY_MS);
+  }, [
+    checkAnswer,
+    createRewardCode,
+    currentLevel,
+    currentQuestion,
+    currentQuestionIndex,
+    isAdvancing,
+    playAnswerSound,
+    questions.length,
+    saveLeaderboardEntry,
+    selectAnswer,
+    status,
+    submitLevel,
+    totalCorrectAnswers,
+  ]);
+
+  function handleAnswerClick(answerId: string) {
+    void completeQuestion(answerId);
   }
+
+  useEffect(() => {
+    if (
+      !currentQuestion ||
+      isAdvancing ||
+      feedback ||
+      isGameOver ||
+      levelSummary ||
+      status !== "ready"
+    ) {
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (timeLeft <= 1) {
+        setTimeLeft(0);
+        void completeQuestion(null);
+        return;
+      }
+
+      setTimeLeft((seconds) => Math.max(seconds - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    completeQuestion,
+    currentQuestion,
+    feedback,
+    isAdvancing,
+    isGameOver,
+    levelSummary,
+    status,
+    timeLeft,
+  ]);
 
   return (
     <main className="flex min-h-[100svh] items-center justify-center overflow-hidden bg-black text-white">
-      <section className="relative h-[100svh] w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-4 py-4">
+      <section className="relative h-[100svh] w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
         <BackgroundSlider backgrounds={backgrounds} />
+        <FireworksOverlay isVisible={showFireworks} />
 
-      <div className="relative z-10 mx-auto flex h-full flex-col gap-4">
+      <div className="relative z-10 mx-auto flex h-full flex-col gap-3 sm:gap-4">
         <LogoBar />
 
         <AnimatePresence mode="wait">
@@ -335,7 +530,7 @@ export default function PlayPage() {
             >
               <Medal className="mb-5 h-16 w-16 text-[#ffcd00]" />
               <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[#4aa3df]">
-                Level {currentLevel} Passed
+                Cấp độ {currentLevel} đã vượt qua
               </p>
               <h1 className="text-4xl font-black">Đủ điều kiện đi tiếp</h1>
               <p className="mt-4 max-w-xl text-white/75">{levelSummary}</p>
@@ -344,35 +539,49 @@ export default function PlayPage() {
                 onClick={handleNextLevel}
                 className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#4aa3df] px-7 py-3 font-bold text-[#06111f] shadow-lg transition hover:bg-[#7cc3ef]"
               >
-                Vào Level {currentLevel + 1}
+                Vào cấp độ {currentLevel + 1}
                 <ChevronRight className="h-5 w-5" />
               </button>
             </motion.section>
           ) : (
             <motion.section
               key="question"
-              className="flex flex-1 flex-col gap-4 overflow-y-auto pb-2"
+              className="flex flex-1 flex-col gap-3 overflow-y-auto pb-2 sm:gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <aside className="rounded-[1.6rem] border border-white/15 bg-[#1f2b1f]/75 p-4 shadow-2xl backdrop-blur-xl">
-                <div className="mb-4 flex items-center justify-between gap-4">
+              <aside className="rounded-[1.4rem] border border-white/15 bg-[#1f2b1f]/75 p-3 shadow-2xl backdrop-blur-xl sm:rounded-[1.6rem] sm:p-4">
+                <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#ffcd00]">
-                      Quiz Game
-                    </p>
-                    <h1 className="mt-1 text-3xl font-black text-white">
-                      Level {currentLevel}
+                    <h1 className="text-2xl font-black text-white sm:text-3xl">
+                      Cấp độ {currentLevel}
                     </h1>
                   </div>
-                  <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-4 py-2 text-right">
-                    <p className="text-xs font-bold uppercase text-[#9bd8ff]">
-                      Câu hỏi
-                    </p>
-                    <p className="text-2xl font-black text-white">
-                      {progressText}
-                    </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-3 py-2 text-right">
+                      <p className="text-[0.65rem] font-bold uppercase text-[#9bd8ff]">
+                        Câu hỏi
+                      </p>
+                      <p className="text-xl font-black text-white sm:text-2xl">
+                        {progressText}
+                      </p>
+                    </div>
+                    <div
+                      className={`rounded-2xl border px-3 py-2 text-right transition ${
+                        isTimerWarning
+                          ? "animate-pulse border-red-300 bg-red-600/70 text-white shadow-[0_0_24px_rgba(220,38,38,0.5)]"
+                          : "border-[#ffcd00]/40 bg-[#ffcd00]/15 text-white"
+                      }`}
+                    >
+                      <p className="flex items-center justify-end gap-1 text-[0.65rem] font-bold uppercase">
+                        <Clock className="h-3.5 w-3.5" />
+                        Thời gian
+                      </p>
+                      <p className="text-xl font-black sm:text-2xl">
+                        {timeLeft}s
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -388,31 +597,31 @@ export default function PlayPage() {
                   />
                 </div>
 
-                <div className="mt-4 grid grid-cols-[auto_1fr] items-center gap-4 rounded-3xl border border-white/10 bg-black/20 p-4">
+                <div className="mt-3 grid grid-cols-[auto_1fr] items-center gap-3 rounded-3xl border border-white/10 bg-black/20 p-3 sm:mt-4 sm:gap-4 sm:p-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
-                      Điểm level
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-xs">
+                      Điểm cấp độ
                     </p>
-                    <p className="mt-1 text-3xl font-black text-[#ffcd00]">
+                    <p className="mt-1 text-2xl font-black text-[#ffcd00] sm:text-3xl">
                       {score}
                     </p>
                   </div>
-                  <p className="text-sm leading-6 text-white/65">
-                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Level 1.
+                  <p className="text-xs leading-5 text-white/65 sm:text-sm sm:leading-6">
+                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ 1.
                   </p>
                 </div>
               </aside>
 
-              <section className="rounded-[1.8rem] border border-white/15 bg-white/95 p-5 text-[#071a2f] shadow-2xl backdrop-blur-xl">
+              <section className="rounded-[1.5rem] border border-white/15 bg-white/95 p-4 text-[#071a2f] shadow-2xl backdrop-blur-xl sm:rounded-[1.8rem] sm:p-5">
                 {status === "loading" ? (
-                  <div className="flex min-h-[460px] items-center justify-center text-lg font-bold text-[#0b4f8a]">
+                  <div className="flex min-h-[360px] items-center justify-center text-base font-bold text-[#0b4f8a] sm:min-h-[460px] sm:text-lg">
                     Đang tải câu hỏi...
                   </div>
                 ) : !currentQuestion ? (
-                  <div className="flex min-h-[460px] flex-col items-center justify-center text-center">
+                  <div className="flex min-h-[360px] flex-col items-center justify-center text-center sm:min-h-[460px]">
                     <Sparkles className="mb-4 h-12 w-12 text-[#da251d]" />
                     <h2 className="text-2xl font-black">
-                      Chưa có câu hỏi cho level này
+                      Chưa có câu hỏi cho cấp độ này
                     </h2>
                     <p className="mt-2 max-w-md text-slate-600">
                       Hãy thêm dữ liệu câu hỏi trong Admin Dashboard trước khi
@@ -432,22 +641,33 @@ export default function PlayPage() {
                         <img
                           src={currentQuestion.imageUrl}
                           alt=""
-                          className="mb-6 max-h-64 w-full rounded-3xl object-cover shadow-lg"
+                          className="mb-4 max-h-44 w-full rounded-2xl object-cover shadow-lg sm:mb-6 sm:max-h-64 sm:rounded-3xl"
                         />
                       ) : null}
 
-                      <p className="mb-3 text-sm font-black uppercase tracking-[0.25em] text-[#da251d]">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-[#da251d] sm:mb-3 sm:text-sm sm:tracking-[0.25em]">
                         Câu hỏi {currentQuestionIndex + 1}
                       </p>
-                      <h2 className="text-2xl font-black leading-tight text-[#0b4f8a]">
+                      <h2 className="text-xl font-black leading-tight text-[#0b4f8a] sm:text-2xl">
                         {currentQuestion.content}
                       </h2>
 
-                      <div className="mt-7 grid gap-3">
+                      <div className="mt-5 grid gap-2.5 sm:mt-7 sm:gap-3">
                         {currentQuestion.answers.map((answer, index) => {
                           const isSelected = selectedAnswerId === answer.id;
+                          const isCorrectAnswer =
+                            feedback?.correctAnswerId === answer.id;
                           const isAlreadyChosen =
                             answers[currentQuestion.id] === answer.id;
+                          const answerColorClass = feedback
+                            ? isCorrectAnswer
+                              ? "border-emerald-500 bg-emerald-500 text-white"
+                              : isSelected
+                                ? "border-red-500 bg-red-500 text-white"
+                                : "border-slate-200 bg-white text-slate-500"
+                            : isSelected || isAlreadyChosen
+                              ? "border-[#ffcd00] bg-[#ffcd00] text-[#071a2f]"
+                              : "border-slate-200 bg-white text-slate-800 hover:border-[#4aa3df] hover:bg-[#e9f7ff]";
 
                           return (
                             <motion.button
@@ -455,11 +675,7 @@ export default function PlayPage() {
                               type="button"
                               onClick={() => handleAnswerClick(answer.id)}
                               disabled={isAdvancing || status === "submitting"}
-                              className={`flex min-h-16 items-center gap-4 rounded-2xl border px-5 py-4 text-left text-base font-bold shadow-sm transition ${
-                                isSelected || isAlreadyChosen
-                                  ? "border-[#ffcd00] bg-[#ffcd00] text-[#071a2f]"
-                                  : "border-slate-200 bg-white text-slate-800 hover:border-[#4aa3df] hover:bg-[#e9f7ff]"
-                              } disabled:cursor-not-allowed`}
+                              className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-bold shadow-sm transition sm:min-h-16 sm:gap-4 sm:px-5 sm:py-4 sm:text-base ${answerColorClass} disabled:cursor-not-allowed`}
                               whileTap={{ scale: 0.98 }}
                               animate={
                                 isSelected
@@ -467,7 +683,7 @@ export default function PlayPage() {
                                   : { scale: 1 }
                               }
                             >
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0b4f8a] text-white">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0b4f8a] text-white sm:h-9 sm:w-9">
                                 {String.fromCharCode(65 + index)}
                               </span>
                               <span>{answer.content}</span>
@@ -478,8 +694,29 @@ export default function PlayPage() {
 
                       {status === "submitting" ? (
                         <p className="mt-5 text-sm font-bold text-[#0b4f8a]">
-                          Đang chấm kết quả level...
+                          Đang chấm kết quả cấp độ...
                         </p>
+                      ) : null}
+
+                      {feedback ? (
+                        <div
+                          className={`mt-4 rounded-2xl border px-4 py-3 sm:mt-5 ${
+                            feedback.isCorrect
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                              : "border-red-200 bg-red-50 text-red-800"
+                          }`}
+                        >
+                          <p className="font-black">
+                            {feedback.isCorrect
+                              ? "Chính xác!"
+                              : `Chưa đúng. Đáp án đúng: ${feedback.correctAnswer}`}
+                          </p>
+                          {feedback.explanation ? (
+                            <p className="mt-2 text-sm font-semibold leading-6">
+                              {feedback.explanation}
+                            </p>
+                          ) : null}
+                        </div>
                       ) : null}
                     </motion.div>
                   </AnimatePresence>

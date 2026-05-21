@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Noto_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-const notoSerif = Noto_Serif({
-  variable: "--font-noto-serif",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
@@ -27,7 +21,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

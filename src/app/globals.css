@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-noto-sans);
-  --font-serif: var(--font-noto-serif);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,7 +22,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-noto-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 @keyframes kioskTextScroll {
@@ -43,4 +43,15 @@ body {
   100% {
     transform: translateX(-50%);
   }
+}
+
+.kiosk-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: kioskMarquee 18s linear infinite;
+}
+
+.kiosk-marquee-group {
+  display: flex;
+  min-width: max-content;
 }

@@ -177,14 +177,22 @@ export default function Home() {
             </h1>
 
             <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-white/10 py-4">
-              <div className="animate-[kioskMarquee_5.2s_linear_infinite] whitespace-nowrap">
-                {[...introLines, ...introLines].map((line, index) => (
-                  <span
-                    key={`${line}-${index}`}
-                    className="mx-6 inline-block text-base font-semibold text-white/88"
+              <div className="kiosk-marquee-track">
+                {[0, 1].map((groupIndex) => (
+                  <div
+                    key={groupIndex}
+                    className="kiosk-marquee-group whitespace-nowrap"
+                    aria-hidden={groupIndex === 1}
                   >
-                    {line}
-                  </span>
+                    {introLines.map((line, index) => (
+                      <span
+                        key={`${groupIndex}-${line}-${index}`}
+                        className="mx-6 inline-block text-base font-semibold text-white/88"
+                      >
+                        {line}
+                      </span>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
@@ -198,7 +206,7 @@ export default function Home() {
             disabled={isStarting}
             className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#da251d] px-8 py-5 text-2xl font-black uppercase tracking-[0.04em] text-white shadow-[0_18px_60px_rgba(218,37,29,0.45)] transition hover:bg-[#b91d17] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isStarting ? "Đang bắt đầu..." : "Tham Gia Tìm Hiểu"}
+            {isStarting ? "Đang bắt đầu..." : "Tham Gia"}
             <ChevronRight className="h-7 w-7 transition group-hover:translate-x-1" />
           </button>
 
