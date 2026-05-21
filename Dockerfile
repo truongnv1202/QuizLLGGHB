@@ -18,6 +18,7 @@ FROM deps AS migrator
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+RUN npx prisma generate
 
 CMD ["npx", "prisma", "db", "push"]
 
