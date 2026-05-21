@@ -527,10 +527,8 @@ export default function PlayPage() {
                       Cấp độ {currentLevel}
                     </h1>
                     <p className="mt-1 text-[0.68rem] leading-4 text-white/70 sm:text-xs sm:leading-5">
-                      Điểm cấp độ:{" "}
-                      <span className="font-black text-[#ffcd00]">{score}</span>
-                      {" · "}Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại
-                      Cấp độ 1.
+                      Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ
+                      1.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
