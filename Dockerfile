@@ -18,6 +18,7 @@ FROM deps AS migrator
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+
 CMD ["npx", "prisma", "db", "push"]
 
 FROM base AS runner
