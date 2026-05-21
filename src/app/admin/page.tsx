@@ -3,15 +3,17 @@
 import {
   ImagePlus,
   ListChecks,
+  LogOut,
   Pencil,
   Plus,
   RefreshCcw,
   Trash2,
   Trophy,
+  Users,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
-type AdminTab = "questions" | "backgrounds" | "rewardCodes";
+type AdminTab = "questions" | "backgrounds" | "stats" | "rewardCodes";
 type GameLevel = 1 | 2 | 3 | 4 | 5;
 
 type AdminAnswer = {
@@ -40,6 +42,19 @@ type BackgroundImage = {
 type RewardCode = {
   id: string;
   code: string;
+  createdAt: string;
+};
+
+type GameStats = {
+  totalPlayers: number;
+};
+
+type LeaderboardEntry = {
+  id: string;
+  playerName: string;
+  score: number;
+  totalQuestions: number;
+  durationMs: number;
   createdAt: string;
 };
 
@@ -87,11 +102,27 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatDuration(durationMs: number) {
+  const seconds = Math.max(0, Math.round(durationMs / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>("questions");
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [backgrounds, setBackgrounds] = useState<BackgroundImage[]>([]);
   const [rewardCodes, setRewardCodes] = useState<RewardCode[]>([]);
+  const [gameStats, setGameStats] = useState<GameStats | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginForm, setLoginForm] = useState({
+    username: "admin",
+    password: "",
+  });
   const [questionForm, setQuestionForm] = useState(initialQuestionForm);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null,
@@ -132,6 +163,16 @@ export default function AdminPage() {
     setRewardCodes(data);
   }
 
+  async function refreshStats() {
+    const data = await fetchJson<GameStats>("/api/admin/stats");
+    setGameStats(data);
+  }
+
+  async function refreshLeaderboard() {
+    const data = await fetchJson<LeaderboardEntry[]>("/api/admin/leaderboard");
+    setLeaderboard(data);
+  }
+
   async function refreshAll() {
     setIsLoading(true);
     setError(null);
@@ -141,6 +182,8 @@ export default function AdminPage() {
         refreshQuestions(),
         refreshBackgrounds(),
         refreshRewardCodes(),
+        refreshStats(),
+        refreshLeaderboard(),
       ]);
     } catch (requestError) {
       setError(
@@ -156,12 +199,32 @@ export default function AdminPage() {
   useEffect(() => {
     let isMounted = true;
 
-    Promise.all([
-      fetchJson<AdminQuestion[]>("/api/admin/questions"),
-      fetchJson<BackgroundImage[]>("/api/admin/backgrounds"),
-      fetchJson<RewardCode[]>("/api/admin/reward-codes?limit=200"),
-    ])
-      .then(([questionData, backgroundData, rewardCodeData]) => {
+    fetchJson<{ authenticated: boolean }>("/api/admin/auth/me")
+      .then(async (authData) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setIsAuthenticated(authData.authenticated);
+
+        if (!authData.authenticated) {
+          return;
+        }
+
+        const [
+          questionData,
+          backgroundData,
+          rewardCodeData,
+          statsData,
+          leaderboardData,
+        ] = await Promise.all([
+          fetchJson<AdminQuestion[]>("/api/admin/questions"),
+          fetchJson<BackgroundImage[]>("/api/admin/backgrounds"),
+          fetchJson<RewardCode[]>("/api/admin/reward-codes?limit=200"),
+          fetchJson<GameStats>("/api/admin/stats"),
+          fetchJson<LeaderboardEntry[]>("/api/admin/leaderboard"),
+        ]);
+
         if (!isMounted) {
           return;
         }
@@ -169,6 +232,8 @@ export default function AdminPage() {
         setQuestions(questionData);
         setBackgrounds(backgroundData);
         setRewardCodes(rewardCodeData);
+        setGameStats(statsData);
+        setLeaderboard(leaderboardData);
       })
       .catch((requestError) => {
         if (!isMounted) {
@@ -186,6 +251,7 @@ export default function AdminPage() {
           return;
         }
 
+        setIsAuthChecking(false);
         setIsLoading(false);
       });
 
@@ -491,6 +557,161 @@ export default function AdminPage() {
     }
   }
 
+  async function loginAdmin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    try {
+      await fetchJson<{ authenticated: boolean }>("/api/admin/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginForm),
+      });
+      setIsAuthenticated(true);
+      setMessage("Đăng nhập admin thành công.");
+      await refreshAll();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể đăng nhập admin.",
+      );
+    }
+  }
+
+  async function logoutAdmin() {
+    await fetchJson<{ authenticated: boolean }>("/api/admin/auth/logout", {
+      method: "POST",
+    });
+    setIsAuthenticated(false);
+    setQuestions([]);
+    setBackgrounds([]);
+    setRewardCodes([]);
+    setLeaderboard([]);
+    setGameStats(null);
+  }
+
+  async function resetTotalPlayers() {
+    if (!window.confirm("Đưa số lượt người chơi về 0?")) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      const data = await fetchJson<GameStats>("/api/admin/stats/reset", {
+        method: "POST",
+      });
+      setGameStats(data);
+      setMessage("Đã reset số lượt người chơi.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể reset số lượt người chơi.",
+      );
+    }
+  }
+
+  async function resetLeaderboard() {
+    if (!window.confirm("Xóa toàn bộ bảng xếp hạng?")) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      await fetchJson<{ deletedCount: number }>("/api/admin/leaderboard/reset", {
+        method: "POST",
+      });
+      setLeaderboard([]);
+      setMessage("Đã xóa bảng xếp hạng.");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Không thể xóa bảng xếp hạng.",
+      );
+    }
+  }
+
+  if (isAuthChecking) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#071a2f] px-4 text-white">
+        <div className="rounded-3xl border border-white/20 bg-white/10 p-8 font-bold backdrop-blur">
+          Đang kiểm tra quyền admin...
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#071a2f] px-4 text-white">
+        <form
+          onSubmit={loginAdmin}
+          className="w-full max-w-md rounded-[2rem] border border-white/20 bg-white/95 p-6 text-slate-900 shadow-2xl"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-[#da251d]">
+            Admin Login
+          </p>
+          <h1 className="mt-2 text-3xl font-black text-[#0b4f8a]">
+            Quản trị Quiz GGHB
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-slate-500">
+            Tài khoản admin được cấu hình cố định bằng biến môi trường.
+          </p>
+
+          <label className="mt-6 block text-sm font-bold text-slate-700">
+            Tài khoản
+            <input
+              value={loginForm.username}
+              onChange={(event) =>
+                setLoginForm((current) => ({
+                  ...current,
+                  username: event.target.value,
+                }))
+              }
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-[#4aa3df] focus:ring-4 focus:ring-[#4aa3df]/20"
+            />
+          </label>
+
+          <label className="mt-4 block text-sm font-bold text-slate-700">
+            Mật khẩu
+            <input
+              type="password"
+              value={loginForm.password}
+              onChange={(event) =>
+                setLoginForm((current) => ({
+                  ...current,
+                  password: event.target.value,
+                }))
+              }
+              className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-[#4aa3df] focus:ring-4 focus:ring-[#4aa3df]/20"
+            />
+          </label>
+
+          {error ? (
+            <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            className="mt-6 w-full rounded-2xl bg-[#0b4f8a] px-5 py-3 font-black text-white transition hover:bg-[#083d6b]"
+          >
+            Đăng nhập
+          </button>
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#071a2f] text-slate-900">
       <div className="absolute inset-x-0 top-0 h-72 bg-[linear-gradient(135deg,#4aa3df_0%,#0b4f8a_45%,#1f2b1f_100%)] opacity-90" />
@@ -504,18 +725,28 @@ export default function AdminPage() {
               Quản trị Quiz Game GGHB VN
             </h1>
             <p className="mt-2 max-w-2xl text-white/75">
-              Giao diện CRUD tạm thời không yêu cầu đăng nhập, dùng trực tiếp
-              các API route admin.
+              Giao diện CRUD được bảo vệ bằng tài khoản admin cấu hình cố định.
+              Số lượt chơi và bảng xếp hạng chỉ reset bằng nút tại đây.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={refreshAll}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-white/20"
-          >
-            <RefreshCcw className="h-5 w-5" />
-            Tải lại dữ liệu
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={refreshAll}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <RefreshCcw className="h-5 w-5" />
+              Tải lại dữ liệu
+            </button>
+            <button
+              type="button"
+              onClick={logoutAdmin}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-[#da251d] px-5 py-3 font-bold text-white backdrop-blur transition hover:bg-[#b91d17]"
+            >
+              <LogOut className="h-5 w-5" />
+              Đăng xuất
+            </button>
+          </div>
         </header>
 
         <section className="rounded-[2rem] border border-white/20 bg-white/95 p-4 shadow-2xl backdrop-blur md:p-6">
@@ -523,6 +754,7 @@ export default function AdminPage() {
             {[
               { id: "questions" as const, label: "Quản lý câu hỏi" },
               { id: "backgrounds" as const, label: "Quản lý Background" },
+              { id: "stats" as const, label: "Thống kê & Xếp hạng" },
               { id: "rewardCodes" as const, label: "Reward Codes" },
             ].map((tab) => (
               <button
@@ -903,6 +1135,111 @@ export default function AdminPage() {
                   </p>
                 ) : null}
               </div>
+            </div>
+          ) : null}
+
+          {!isLoading && activeTab === "stats" ? (
+            <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+              <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div className="mb-5 flex items-center gap-3">
+                  <Users className="h-7 w-7 text-[#0b4f8a]" />
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#da251d]">
+                      Game Stats
+                    </p>
+                    <h2 className="text-2xl font-black text-[#0b4f8a]">
+                      Số lượt người chơi
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-500">
+                    Tổng lượt bắt đầu chơi
+                  </p>
+                  <p className="mt-3 text-6xl font-black text-[#0b4f8a]">
+                    {gameStats?.totalPlayers ?? 0}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={resetTotalPlayers}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#da251d] px-5 py-3 font-black text-white transition hover:bg-[#b91d17]"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  Reset số lượt người chơi
+                </button>
+                <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
+                  Reset game của người chơi không làm mất số liệu này. Chỉ nút
+                  trong admin mới đưa bộ đếm về 0.
+                </p>
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5">
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="h-7 w-7 text-[#ffcd00]" />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-[#da251d]">
+                        Leaderboard
+                      </p>
+                      <h2 className="text-2xl font-black text-[#0b4f8a]">
+                        Bảng xếp hạng
+                      </h2>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={resetLeaderboard}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-red-100 px-4 py-2 text-sm font-black text-red-700 transition hover:bg-red-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Xóa bảng xếp hạng
+                  </button>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-slate-200">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead className="bg-[#0b4f8a] text-white">
+                      <tr>
+                        <th className="px-4 py-3 font-black">Hạng</th>
+                        <th className="px-4 py-3 font-black">Người chơi</th>
+                        <th className="px-4 py-3 font-black">Điểm</th>
+                        <th className="px-4 py-3 font-black">Thời gian</th>
+                        <th className="px-4 py-3 font-black">Lúc chơi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboard.map((entry, index) => (
+                        <tr key={entry.id} className="border-t border-slate-200">
+                          <td className="px-4 py-3 font-black text-[#071a2f]">
+                            #{index + 1}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-700">
+                            {entry.playerName}
+                          </td>
+                          <td className="px-4 py-3 font-black text-[#0b4f8a]">
+                            {entry.score}/{entry.totalQuestions}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-600">
+                            {formatDuration(entry.durationMs)}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-600">
+                            {formatDate(entry.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {leaderboard.length === 0 ? (
+                  <p className="mt-4 rounded-2xl border border-dashed border-slate-300 p-6 text-center font-semibold text-slate-500">
+                    Chưa có dữ liệu bảng xếp hạng.
+                  </p>
+                ) : null}
+              </section>
             </div>
           ) : null}
 

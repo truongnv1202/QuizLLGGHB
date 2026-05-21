@@ -8,6 +8,7 @@ import {
   readJsonBody,
   serverError,
 } from "@/lib/admin-api";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
@@ -17,6 +18,12 @@ type RouteContext = {
 };
 
 export async function GET(_request: Request, context: RouteContext) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const { id } = await context.params;
 
   try {
@@ -39,6 +46,12 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const { id } = await context.params;
   const payload = await readJsonBody(request);
 
@@ -105,6 +118,12 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const { id } = await context.params;
 
   try {

@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 
+import { defaultQuestions } from "./seed-data";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 type SeedAnswer = {
@@ -327,19 +328,9 @@ function printSummary(questions: SeedQuestion[]) {
 async function main() {
   const options = parseArgs();
 
-  if (!options.source) {
-    throw new Error(
-      [
-        "Missing seed source.",
-        "Usage:",
-        "  npm run seed -- --source ./prisma/questions.txt",
-        "  npm run seed -- --source https://docs.google.com/document/d/<DOC_ID>/edit",
-      ].join("\n"),
-    );
-  }
-
-  const text = await loadSeedText(options.source);
-  const questions = parseSeedText(text);
+  const questions = options.source
+    ? parseSeedText(await loadSeedText(options.source))
+    : defaultQuestions;
 
   if (questions.length === 0) {
     throw new Error("No questions were parsed from the seed source.");

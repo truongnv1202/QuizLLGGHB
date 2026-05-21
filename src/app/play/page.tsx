@@ -5,10 +5,10 @@ import {
   ChevronRight,
   Medal,
   RotateCcw,
-  Shield,
   Sparkles,
   Trophy,
 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
@@ -65,8 +65,14 @@ function LogoBar() {
   return (
     <header className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white shadow-lg backdrop-blur">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#ffcd00] bg-[#0b4f8a]">
-          <Shield className="h-6 w-6 text-[#ffcd00]" />
+        <div className="relative h-12 w-24 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/60">
+          <Image
+            src="/logo-gghb.png"
+            alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
+            fill
+            className="object-contain p-1.5"
+            sizes="96px"
+          />
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#ffcd00]">
@@ -188,6 +194,9 @@ export default function PlayPage() {
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [levelSummary, setLevelSummary] = useState<string | null>(null);
+  const [gameStartedAt, setGameStartedAt] = useState(() => Date.now());
+  const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
+  const [hasSavedLeaderboard, setHasSavedLeaderboard] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progressText = useMemo(
@@ -210,6 +219,9 @@ export default function PlayPage() {
     setIsAdvancing(false);
     setIsGameOver(false);
     setLevelSummary(null);
+    setGameStartedAt(Date.now());
+    setTotalCorrectAnswers(0);
+    setHasSavedLeaderboard(false);
     await loadQuestions(1);
   }
 
@@ -219,6 +231,27 @@ export default function PlayPage() {
     setIsAdvancing(false);
     setLevelSummary(null);
     await nextLevel();
+  }
+
+  async function saveLeaderboardEntry(score: number) {
+    if (hasSavedLeaderboard) {
+      return;
+    }
+
+    setHasSavedLeaderboard(true);
+
+    await fetch("/api/game/leaderboard", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerName: "Khách tham gia",
+        score,
+        totalQuestions: 40,
+        durationMs: new Date().getTime() - gameStartedAt,
+      }),
+    });
   }
 
   async function handleAnswerClick(answerId: string) {
@@ -251,12 +284,16 @@ export default function PlayPage() {
         }
 
         if (currentLevel === 5) {
+          const finalScore = totalCorrectAnswers + result.correctCount;
+          setTotalCorrectAnswers(finalScore);
+          await saveLeaderboardEntry(finalScore);
           await createRewardCode();
           setSelectedAnswerId(null);
           setIsAdvancing(false);
           return;
         }
 
+        setTotalCorrectAnswers((score) => score + result.correctCount);
         setLevelSummary(
           `Bạn đã trả lời đúng ${result.correctCount}/${result.totalQuestions} câu (${result.scorePercent}%).`,
         );

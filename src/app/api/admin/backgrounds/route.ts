@@ -7,9 +7,16 @@ import {
   readJsonBody,
   serverError,
 } from "@/lib/admin-api";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   try {
     const backgrounds = await prisma.backgroundImage.findMany({
       orderBy: {
@@ -26,6 +33,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const payload = await readJsonBody(request);
 
   if (!payload || typeof payload !== "object") {

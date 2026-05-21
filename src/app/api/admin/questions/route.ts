@@ -9,9 +9,16 @@ import {
   readJsonBody,
   serverError,
 } from "@/lib/admin-api";
+import { requireAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const { searchParams } = new URL(request.url);
   const levelParam = searchParams.get("level");
   const level = levelParam ? parseLevelOrNull(levelParam) : undefined;
@@ -42,6 +49,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   const payload = await readJsonBody(request);
 
   if (!payload || typeof payload !== "object") {

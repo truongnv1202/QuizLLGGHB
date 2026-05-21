@@ -5,6 +5,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 
 import { badRequest, serverError } from "@/lib/admin-api";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,12 @@ function getFileExtension(fileName: string) {
 }
 
 export async function POST(request: Request) {
+  const unauthorized = await requireAdmin();
+
+  if (unauthorized) {
+    return unauthorized;
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
