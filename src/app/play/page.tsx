@@ -522,10 +522,16 @@ export default function PlayPage() {
             >
               <aside className="shrink-0 rounded-[1.25rem] border border-white/15 bg-[#1f2b1f]/75 p-2.5 shadow-2xl backdrop-blur-xl sm:rounded-[1.6rem] sm:p-4">
                 <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4 sm:gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <h1 className="text-xl font-black text-white sm:text-3xl">
                       Cấp độ {currentLevel}
                     </h1>
+                    <p className="mt-1 text-[0.68rem] leading-4 text-white/70 sm:text-xs sm:leading-5">
+                      Điểm cấp độ:{" "}
+                      <span className="font-black text-[#ffcd00]">{score}</span>
+                      {" · "}Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại
+                      Cấp độ 1.
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-2.5 py-1.5 text-right sm:px-3 sm:py-2">
@@ -691,22 +697,6 @@ export default function PlayPage() {
                     {error}
                   </p>
                 ) : null}
-              </section>
-
-              <section className="shrink-0 rounded-2xl border border-white/10 bg-black/35 p-2.5 text-white shadow-2xl backdrop-blur-xl sm:rounded-3xl sm:p-4">
-                <div className="grid grid-cols-[auto_1fr] items-center gap-3 sm:gap-4">
-                  <div>
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-xs">
-                      Điểm cấp độ
-                    </p>
-                    <p className="mt-0.5 text-xl font-black text-[#ffcd00] sm:mt-1 sm:text-3xl">
-                      {score}
-                    </p>
-                  </div>
-                  <p className="text-[0.7rem] leading-4 text-white/70 sm:text-sm sm:leading-6">
-                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ 1.
-                  </p>
-                </div>
               </section>
             </motion.section>
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Trophy, Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -210,33 +210,15 @@ export default function Home() {
             <ChevronRight className="h-7 w-7 transition group-hover:translate-x-1" />
           </button>
 
-          <section className="mt-4 space-y-3 rounded-[1.8rem] border border-white/15 bg-black/48 p-4 shadow-2xl backdrop-blur-md">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                <div className="mb-2 flex items-center gap-2 text-[#ffcd00]">
-                  <Users className="h-5 w-5" />
-                  <p className="text-xs font-black uppercase tracking-[0.18em]">
-                    Tham gia
-                  </p>
-                </div>
-                <p className="text-4xl font-black">
-                  {gameStats?.totalPlayers ?? 0}
-                </p>
-              </div>
+          <p className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-white/75">
+            <Users className="h-4 w-4 text-[#ffcd00]" />
+            Số lượng người chơi:{" "}
+            <span className="font-black text-[#ffcd00]">
+              {gameStats?.totalPlayers ?? 0}
+            </span>
+          </p>
 
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-                <div className="mb-2 flex items-center gap-2 text-[#ffcd00]">
-                  <Trophy className="h-5 w-5" />
-                  <p className="text-xs font-black uppercase tracking-[0.18em]">
-                    Top điểm
-                  </p>
-                </div>
-                <p className="text-4xl font-black">
-                  {leaderboard[0]?.score ?? 0}
-                </p>
-              </div>
-            </div>
-
+          <section className="mt-3 rounded-[1.8rem] border border-white/15 bg-black/48 p-4 shadow-2xl backdrop-blur-md">
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffcd00]">
