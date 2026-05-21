@@ -1,0 +1,53 @@
+# BỐI CẢNH DỰ ÁN (PROJECT CONTEXT)
+Bạn là một Senior Full-stack Developer. Nhiệm vụ của bạn là xây dựng một hệ thống Quiz Game Web App chủ đề: "Tìm hiểu về Lực lượng Gìn giữ Hòa bình Việt Nam (Vietnam Peacekeeping Force)". 
+Hệ thống bao gồm 2 phần: Frontend (Giao diện người chơi) và Backend/Admin Dashboard (Dành cho quản trị viên).
+
+# TECH STACK ĐỀ XUẤT
+- Frontend: Next.js (React), Tailwind CSS, Framer Motion (cho animation chuyển cảnh mượt mà).
+- Backend & Database: Next.js API Routes + Prisma + PostgreSQL (hoặc Supabase/Firebase để quản lý media dễ dàng).
+- Quản lý State: Zustand hoặc React Context.
+
+# 1. LOGIC TRÒ CHƠI (GAME CORE TIER)
+Phát triển logic game tuân thủ NGHIÊM NGẶT các quy tắc sau:
+- Cấu trúc 5 Levels (Tổng 40 câu):
+  + Level 1: 5 câu hỏi
+  + Level 2: 6 câu hỏi
+  + Level 3: 8 câu hỏi
+  + Level 4: 9 câu hỏi
+  + Level 5: 12 câu hỏi
+- Điều kiện thắng Level: Người chơi phải trả lời ĐÚNG >= 80% số câu hỏi của level hiện tại để đi tiếp.
+- Điều kiện thua: Trả lời sai quá số lượng cho phép (< 80% đúng), Game Over ngay lập tức -> Force reset về lại Level 1, mất toàn bộ tiến trình.
+- Phần thưởng (Victory): Khi vượt qua thành công Level 5, hệ thống tự động sinh ra một mã ngẫu nhiên gồm 6 kí tự (Alphanumeric: VD: VNUK24) hiển thị to, rõ trên màn hình để người chơi dùng chụp ảnh Photobooth. Mã này cần được lưu lại database để tránh trùng lặp hoặc tracking nếu cần.
+
+# 2. GIAO DIỆN NGƯỜI DÙNG (UI/UX & VIBE)
+- Vibe & Tone: Chuyên nghiệp, trang trọng, nghiêm túc, mang tính chất quân sự và ngoại giao. 
+- Bảng màu chủ đạo (Color Palette): Xanh dương Liên Hợp Quốc (UN Blue), Đỏ/Vàng (Quốc kỳ Việt Nam), và Xanh rêu/Khaki (Quân phục).
+- Logo: Đặt logo Lực lượng GGNB VN và UN trang trọng ở góc trái/phải hoặc header.
+- Background: 
+  + Cần có một hệ thống Slider/Carousel chạy dưới background (z-index thấp nhất) gồm các hình ảnh thực tế của lực lượng.
+  + Hình ảnh background được fetch từ Backend/API. Mờ nhẹ (overlay có opacity) để không làm lóa chữ của câu hỏi.
+- Box Câu hỏi:
+  + Layout gọn gàng, text to, rõ ràng (font Sans-serif hiện đại như Inter hoặc Roboto).
+  + Xử lý hình ảnh minh họa: Nếu câu hỏi có ảnh (`imageUrl !== null`), hiển thị ảnh ở trên hoặc bên cạnh text câu hỏi. NẾU KHÔNG CÓ ẢNH, ẨN HOÀN TOÀN DOM chứa ảnh (không để khoảng trắng thừa, layout tự động scale lại cho cân đối).
+  + Hiệu ứng: Cần có hiệu ứng màu sắc khi chọn đáp án (Ví dụ: Xanh lá khi đúng, Đỏ khi sai), kèm delay khoảng 1.5s trước khi chuyển câu.
+
+# 3. HỆ THỐNG BACKEND & ADMIN DASHBOARD
+Tạo một trang `/admin` (cần login/bảo mật cơ bản) với các chức năng:
+- Quản lý Câu hỏi (CRUD):
+  + Thêm/Sửa/Xóa câu hỏi.
+  + Gán câu hỏi vào các Level (1-5).
+  + Nhập 4 đáp án và chọn đáp án đúng.
+  + Upload hình ảnh minh họa cho câu hỏi (Tùy chọn).
+- Quản lý Background Hình ảnh:
+  + Module upload và quản lý thư viện ảnh làm background chạy cho giao diện Frontend. Bật/tắt ảnh nào được hiển thị.
+- Quản lý Mã thưởng (Reward Codes):
+  + Bảng thống kê các mã 6 kí tự đã được hệ thống phát hành cho người thắng cuộc và thời gian phát hành.
+
+# HƯỚNG DẪN THỰC THI CHO AI (EXECUTION STEPS)
+1. Initialize project với Next.js và cài đặt Tailwind.
+2. Setup Prisma schema gồm các model: `Question`, `Answer`, `BackgroundImages`, `RewardCode`.
+3. Viết API Routes cho việc fetch câu hỏi theo level, validate kết quả, sinh mã phần thưởng.
+4. Xây dựng Game Engine/State (Zustand) xử lý logic đếm điểm, check 80%, chuyển level và reset.
+5. Code UI Frontend: Màn hình Welcome -> Màn hình Chơi -> Màn hình Thắng/Thua -> Màn hình nhận Mã.
+6. Code UI Admin Dashboard để CRUD dữ liệu.
+Hãy viết code sạch, chia component nhỏ (ví dụ: `QuestionCard`, `BackgroundSlider`, `ProgressBar`) và xử lý lỗi cẩn thận.
