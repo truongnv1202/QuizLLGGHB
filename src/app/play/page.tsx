@@ -93,26 +93,26 @@ function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
 
 function LogoBar() {
   return (
-    <header className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white shadow-lg backdrop-blur">
-        <div className="relative h-12 w-24 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/60">
+    <header className="flex shrink-0 items-center justify-between gap-3">
+      <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white shadow-lg backdrop-blur">
+        <div className="relative h-10 w-20 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/60">
           <Image
             src="/logo-gghb.png"
             alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
             fill
             className="object-contain p-1.5"
-            sizes="96px"
+            sizes="80px"
           />
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#ffcd00]">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[#ffcd00]">
             GGHB Việt Nam
           </p>
-          <p className="text-sm font-semibold">Vietnam Peacekeeping Force</p>
+          <p className="text-xs font-semibold">Vietnam Peacekeeping Force</p>
         </div>
       </div>
 
-      <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/50 bg-[#4aa3df]/90 text-lg font-black text-white shadow-lg">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-[#4aa3df]/90 text-sm font-black text-white shadow-lg">
         UN
       </div>
     </header>
@@ -503,12 +503,12 @@ export default function PlayPage() {
   ]);
 
   return (
-    <main className="flex min-h-[100svh] items-center justify-center overflow-hidden bg-black text-white">
-      <section className="relative h-[100svh] w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
+    <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black text-white">
+      <section className="relative h-full w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-2 py-2 sm:px-4 sm:py-4">
         <BackgroundSlider backgrounds={backgrounds} />
         <FireworksOverlay isVisible={showFireworks} />
 
-      <div className="relative z-10 mx-auto flex h-full flex-col gap-3 sm:gap-4">
+      <div className="relative z-10 mx-auto flex h-full min-h-0 flex-col gap-2 sm:gap-4">
         <LogoBar />
 
         <AnimatePresence mode="wait">
@@ -523,7 +523,7 @@ export default function PlayPage() {
           ) : levelSummary ? (
             <motion.section
               key="level-pass"
-              className="mx-auto flex min-h-[70svh] w-full flex-col items-center justify-center rounded-[2rem] border border-[#4aa3df]/30 bg-[#071a2f]/90 p-8 text-center shadow-2xl backdrop-blur-xl"
+              className="mx-auto flex min-h-0 flex-1 w-full flex-col items-center justify-center rounded-[2rem] border border-[#4aa3df]/30 bg-[#071a2f]/90 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
@@ -546,29 +546,29 @@ export default function PlayPage() {
           ) : (
             <motion.section
               key="question"
-              className="flex flex-1 flex-col gap-3 overflow-y-auto pb-2 sm:gap-4"
+              className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pb-1 sm:gap-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <aside className="rounded-[1.4rem] border border-white/15 bg-[#1f2b1f]/75 p-3 shadow-2xl backdrop-blur-xl sm:rounded-[1.6rem] sm:p-4">
-                <div className="mb-3 flex items-center justify-between gap-3 sm:mb-4">
+              <aside className="shrink-0 rounded-[1.25rem] border border-white/15 bg-[#1f2b1f]/75 p-2.5 shadow-2xl backdrop-blur-xl sm:rounded-[1.6rem] sm:p-4">
+                <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4 sm:gap-3">
                   <div>
-                    <h1 className="text-2xl font-black text-white sm:text-3xl">
+                    <h1 className="text-xl font-black text-white sm:text-3xl">
                       Cấp độ {currentLevel}
                     </h1>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-3 py-2 text-right">
+                    <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-2.5 py-1.5 text-right sm:px-3 sm:py-2">
                       <p className="text-[0.65rem] font-bold uppercase text-[#9bd8ff]">
                         Câu hỏi
                       </p>
-                      <p className="text-xl font-black text-white sm:text-2xl">
+                      <p className="text-lg font-black text-white sm:text-2xl">
                         {progressText}
                       </p>
                     </div>
                     <div
-                      className={`rounded-2xl border px-3 py-2 text-right transition ${
+                      className={`rounded-2xl border px-2.5 py-1.5 text-right transition sm:px-3 sm:py-2 ${
                         isTimerWarning
                           ? "animate-pulse border-red-300 bg-red-600/70 text-white shadow-[0_0_24px_rgba(220,38,38,0.5)]"
                           : "border-[#ffcd00]/40 bg-[#ffcd00]/15 text-white"
@@ -578,7 +578,7 @@ export default function PlayPage() {
                         <Clock className="h-3.5 w-3.5" />
                         Thời gian
                       </p>
-                      <p className="text-xl font-black sm:text-2xl">
+                      <p className="text-lg font-black sm:text-2xl">
                         {timeLeft}s
                       </p>
                     </div>
@@ -597,28 +597,28 @@ export default function PlayPage() {
                   />
                 </div>
 
-                <div className="mt-3 grid grid-cols-[auto_1fr] items-center gap-3 rounded-3xl border border-white/10 bg-black/20 p-3 sm:mt-4 sm:gap-4 sm:p-4">
+                <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-2.5 sm:mt-4 sm:gap-4 sm:rounded-3xl sm:p-4">
                   <div>
                     <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-xs">
                       Điểm cấp độ
                     </p>
-                    <p className="mt-1 text-2xl font-black text-[#ffcd00] sm:text-3xl">
+                    <p className="mt-0.5 text-xl font-black text-[#ffcd00] sm:mt-1 sm:text-3xl">
                       {score}
                     </p>
                   </div>
-                  <p className="text-xs leading-5 text-white/65 sm:text-sm sm:leading-6">
+                  <p className="text-[0.7rem] leading-4 text-white/65 sm:text-sm sm:leading-6">
                     Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ 1.
                   </p>
                 </div>
               </aside>
 
-              <section className="rounded-[1.5rem] border border-white/15 bg-white/95 p-4 text-[#071a2f] shadow-2xl backdrop-blur-xl sm:rounded-[1.8rem] sm:p-5">
+              <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.35rem] border border-white/15 bg-white/95 p-3 text-[#071a2f] shadow-2xl backdrop-blur-xl sm:rounded-[1.8rem] sm:p-5">
                 {status === "loading" ? (
-                  <div className="flex min-h-[360px] items-center justify-center text-base font-bold text-[#0b4f8a] sm:min-h-[460px] sm:text-lg">
+                  <div className="flex min-h-0 flex-1 items-center justify-center text-base font-bold text-[#0b4f8a] sm:text-lg">
                     Đang tải câu hỏi...
                   </div>
                 ) : !currentQuestion ? (
-                  <div className="flex min-h-[360px] flex-col items-center justify-center text-center sm:min-h-[460px]">
+                  <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
                     <Sparkles className="mb-4 h-12 w-12 text-[#da251d]" />
                     <h2 className="text-2xl font-black">
                       Chưa có câu hỏi cho cấp độ này
@@ -632,6 +632,7 @@ export default function PlayPage() {
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={currentQuestion.id}
+                      className="flex min-h-0 flex-1 flex-col"
                       initial={{ opacity: 0, x: 30 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -30 }}
@@ -641,18 +642,18 @@ export default function PlayPage() {
                         <img
                           src={currentQuestion.imageUrl}
                           alt=""
-                          className="mb-4 max-h-44 w-full rounded-2xl object-cover shadow-lg sm:mb-6 sm:max-h-64 sm:rounded-3xl"
+                          className="mb-3 max-h-32 w-full shrink-0 rounded-2xl object-cover shadow-lg sm:mb-5 sm:max-h-56 sm:rounded-3xl"
                         />
                       ) : null}
 
-                      <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-[#da251d] sm:mb-3 sm:text-sm sm:tracking-[0.25em]">
+                      <p className="mb-1.5 text-xs font-black uppercase tracking-[0.22em] text-[#da251d] sm:mb-3 sm:text-sm sm:tracking-[0.25em]">
                         Câu hỏi {currentQuestionIndex + 1}
                       </p>
-                      <h2 className="text-xl font-black leading-tight text-[#0b4f8a] sm:text-2xl">
+                      <h2 className="text-lg font-normal leading-snug text-[#0b4f8a] sm:text-2xl">
                         {currentQuestion.content}
                       </h2>
 
-                      <div className="mt-5 grid gap-2.5 sm:mt-7 sm:gap-3">
+                      <div className="mt-3 grid min-h-0 flex-1 content-start gap-2 sm:mt-5 sm:gap-3">
                         {currentQuestion.answers.map((answer, index) => {
                           const isSelected = selectedAnswerId === answer.id;
                           const isCorrectAnswer =
@@ -675,7 +676,7 @@ export default function PlayPage() {
                               type="button"
                               onClick={() => handleAnswerClick(answer.id)}
                               disabled={isAdvancing || status === "submitting"}
-                              className={`flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-bold shadow-sm transition sm:min-h-16 sm:gap-4 sm:px-5 sm:py-4 sm:text-base ${answerColorClass} disabled:cursor-not-allowed`}
+                              className={`flex min-h-12 items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left text-sm font-normal shadow-sm transition sm:min-h-16 sm:gap-4 sm:px-5 sm:py-4 sm:text-base ${answerColorClass} disabled:cursor-not-allowed`}
                               whileTap={{ scale: 0.98 }}
                               animate={
                                 isSelected
@@ -686,7 +687,7 @@ export default function PlayPage() {
                               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0b4f8a] text-white sm:h-9 sm:w-9">
                                 {String.fromCharCode(65 + index)}
                               </span>
-                              <span>{answer.content}</span>
+                              <span className="font-normal">{answer.content}</span>
                             </motion.button>
                           );
                         })}
@@ -706,10 +707,17 @@ export default function PlayPage() {
                               : "border-red-200 bg-red-50 text-red-800"
                           }`}
                         >
-                          <p className="font-black">
-                            {feedback.isCorrect
-                              ? "Chính xác!"
-                              : `Chưa đúng. Đáp án đúng: ${feedback.correctAnswer}`}
+                          <p className="font-semibold">
+                            {feedback.isCorrect ? (
+                              "Chính xác!"
+                            ) : (
+                              <>
+                                Chưa đúng. Đáp án đúng:{" "}
+                                <span className="font-normal">
+                                  {feedback.correctAnswer}
+                                </span>
+                              </>
+                            )}
                           </p>
                           {feedback.explanation ? (
                             <p className="mt-2 text-sm font-semibold leading-6">
