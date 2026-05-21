@@ -131,7 +131,7 @@ function GameOverPanel({ onRestart }: { onRestart: () => void }) {
         <RotateCcw className="h-10 w-10 text-red-200" />
       </div>
       <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-red-200">
-        Game Over
+        Bạn Thua cuộc
       </p>
       <h1 className="text-4xl font-black text-white md:text-5xl">
         Chưa đạt mốc 80%
@@ -591,15 +591,10 @@ export default function PlayPage() {
                     </p>
                   </div>
                 ) : (
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentQuestion.id}
-                      className="flex min-h-0 flex-1 flex-col"
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -30 }}
-                      transition={{ duration: 0.35 }}
-                    >
+                  <div
+                    key={currentQuestion.id}
+                    className="flex min-h-0 flex-1 flex-col"
+                  >
                       {currentQuestion.imageUrl ? (
                         <img
                           src={currentQuestion.imageUrl}
@@ -633,24 +628,18 @@ export default function PlayPage() {
                               : "border-slate-200 bg-white text-slate-800 hover:border-[#4aa3df] hover:bg-[#e9f7ff]";
 
                           return (
-                            <motion.button
+                            <button
                               key={answer.id}
                               type="button"
                               onClick={() => handleAnswerClick(answer.id)}
                               disabled={isAdvancing || status === "submitting"}
                               className={`flex min-h-12 items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left text-sm font-normal shadow-sm transition sm:min-h-16 sm:gap-4 sm:px-5 sm:py-4 sm:text-base ${answerColorClass} disabled:cursor-not-allowed`}
-                              whileTap={{ scale: 0.98 }}
-                              animate={
-                                isSelected
-                                  ? { scale: 1.02 }
-                                  : { scale: 1 }
-                              }
                             >
                               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0b4f8a] text-white sm:h-9 sm:w-9">
                                 {String.fromCharCode(65 + index)}
                               </span>
                               <span className="font-normal">{answer.content}</span>
-                            </motion.button>
+                            </button>
                           );
                         })}
                       </div>
@@ -688,8 +677,7 @@ export default function PlayPage() {
                           ) : null}
                         </div>
                       ) : null}
-                    </motion.div>
-                  </AnimatePresence>
+                  </div>
                 )}
 
                 {error ? (
