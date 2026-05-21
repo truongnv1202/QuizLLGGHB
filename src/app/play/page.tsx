@@ -9,7 +9,6 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
@@ -88,34 +87,6 @@ function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
       <div className="absolute inset-0 bg-[#04111f]/70" />
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,158,219,0.22),rgba(218,37,29,0.18),rgba(255,205,0,0.16))]" />
     </div>
-  );
-}
-
-function LogoBar() {
-  return (
-    <header className="flex shrink-0 items-center justify-between gap-3">
-      <div className="flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white shadow-lg backdrop-blur">
-        <div className="relative h-10 w-20 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/60">
-          <Image
-            src="/logo-gghb.png"
-            alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
-            fill
-            className="object-contain p-1.5"
-            sizes="80px"
-          />
-        </div>
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[#ffcd00]">
-            GGHB Việt Nam
-          </p>
-          <p className="text-xs font-semibold">Vietnam Peacekeeping Force</p>
-        </div>
-      </div>
-
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-[#4aa3df]/90 text-sm font-black text-white shadow-lg">
-        UN
-      </div>
-    </header>
   );
 }
 
@@ -509,8 +480,6 @@ export default function PlayPage() {
         <FireworksOverlay isVisible={showFireworks} />
 
       <div className="relative z-10 mx-auto flex h-full min-h-0 flex-col gap-2 sm:gap-4">
-        <LogoBar />
-
         <AnimatePresence mode="wait">
           {isGameOver ? (
             <GameOverPanel key="game-over" onRestart={restartFromLevelOne} />
@@ -597,19 +566,6 @@ export default function PlayPage() {
                   />
                 </div>
 
-                <div className="mt-2 grid grid-cols-[auto_1fr] items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-2.5 sm:mt-4 sm:gap-4 sm:rounded-3xl sm:p-4">
-                  <div>
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-xs">
-                      Điểm cấp độ
-                    </p>
-                    <p className="mt-0.5 text-xl font-black text-[#ffcd00] sm:mt-1 sm:text-3xl">
-                      {score}
-                    </p>
-                  </div>
-                  <p className="text-[0.7rem] leading-4 text-white/65 sm:text-sm sm:leading-6">
-                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ 1.
-                  </p>
-                </div>
               </aside>
 
               <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[1.35rem] border border-white/15 bg-white/95 p-3 text-[#071a2f] shadow-2xl backdrop-blur-xl sm:rounded-[1.8rem] sm:p-5">
@@ -735,6 +691,22 @@ export default function PlayPage() {
                     {error}
                   </p>
                 ) : null}
+              </section>
+
+              <section className="shrink-0 rounded-2xl border border-white/10 bg-black/35 p-2.5 text-white shadow-2xl backdrop-blur-xl sm:rounded-3xl sm:p-4">
+                <div className="grid grid-cols-[auto_1fr] items-center gap-3 sm:gap-4">
+                  <div>
+                    <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/60 sm:text-xs">
+                      Điểm cấp độ
+                    </p>
+                    <p className="mt-0.5 text-xl font-black text-[#ffcd00] sm:mt-1 sm:text-3xl">
+                      {score}
+                    </p>
+                  </div>
+                  <p className="text-[0.7rem] leading-4 text-white/70 sm:text-sm sm:leading-6">
+                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ 1.
+                  </p>
+                </div>
               </section>
             </motion.section>
           )}
