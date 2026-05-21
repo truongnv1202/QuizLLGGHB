@@ -1,10 +1,22 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+type LeaderboardEntry = {
+  id: string;
+  playerName: string;
+  score: number;
+  totalQuestions: number;
+  durationMs: number;
+};
+
+type ApiResponse<T> = {
+  data?: T;
+};
 
 const kioskImages = [
   {
@@ -32,6 +44,8 @@ export default function Home() {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [totalPlayers, setTotalPlayers] = useState(0);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const activeImage = kioskImages[activeImageIndex];
 
   useEffect(() => {
@@ -40,6 +54,41 @@ export default function Home() {
     }, 5200);
 
     return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([
+      fetch("/api/game/players").then(
+        (response) =>
+          response.json() as Promise<ApiResponse<{ totalPlayers: number }>>,
+      ),
+      fetch("/api/game/leaderboard").then(
+        (response) =>
+          response.json() as Promise<ApiResponse<LeaderboardEntry[]>>,
+      ),
+    ])
+      .then(([playersPayload, leaderboardPayload]) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setTotalPlayers(playersPayload.data?.totalPlayers ?? 0);
+        setLeaderboard((leaderboardPayload.data ?? []).slice(0, 5));
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setTotalPlayers(0);
+        setLeaderboard([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   async function startGame() {
@@ -53,14 +102,23 @@ export default function Home() {
       await fetch("/api/game/players", {
         method: "POST",
       });
+      setTotalPlayers((current) => current + 1);
     } finally {
       router.push("/play");
     }
   }
 
+  function formatDuration(durationMs: number) {
+    const seconds = Math.max(0, Math.round(durationMs / 1000));
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+
   return (
-    <main className="flex min-h-[100svh] items-center justify-center overflow-hidden bg-black text-white">
-      <section className="relative h-[100svh] w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden bg-[#061526] shadow-2xl">
+    <main className="flex h-[100dvh] items-center justify-center overflow-hidden bg-black text-white">
+      <section className="relative h-[100dvh] w-full max-w-[min(100vw,calc(100dvh*9/16))] overflow-hidden bg-[#061526] shadow-2xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeImage.src}
@@ -81,30 +139,20 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-[#04111f]/95 via-[#04111f]/35 to-[#04111f]/92" />
-        <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(74,163,223,0.25),transparent_42%,rgba(218,37,29,0.16))]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#04111f]/86 via-[#04111f]/16 to-[#04111f]/92" />
+        <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(74,163,223,0.18),transparent_48%,rgba(218,37,29,0.14))]" />
 
-        <div className="relative z-10 flex h-full flex-col px-6 py-7">
+        <div className="relative z-10 flex h-full flex-col px-6 py-6">
           <header className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/35 px-3 py-2 shadow-2xl backdrop-blur">
-              <div className="relative h-12 w-24 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/70">
-                <Image
-                  src="/logo-gghb.png"
-                  alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
-                  fill
-                  priority
-                  className="object-contain p-1.5"
-                  sizes="96px"
-                />
-              </div>
-              <div>
-                <p className="text-[0.65rem] font-black uppercase tracking-[0.25em] text-[#ffcd00]">
-                  GGHB Việt Nam
-                </p>
-                <p className="text-xs font-bold text-white/85">
-                  Vietnam Peacekeeping Force
-                </p>
-              </div>
+            <div className="relative h-14 w-28 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/70 shadow-2xl">
+              <Image
+                src="/logo-gghb.png"
+                alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
+                fill
+                priority
+                className="object-contain p-1.5"
+                sizes="112px"
+              />
             </div>
 
             <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/50 bg-[#4aa3df] text-base font-black shadow-2xl">
@@ -112,13 +160,8 @@ export default function Home() {
             </div>
           </header>
 
-          <section className="mt-7 rounded-[1.8rem] border border-white/15 bg-black/40 p-5 shadow-2xl backdrop-blur-md">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#ffcd00]/30 bg-[#ffcd00]/10 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-[#ffcd00]">
-              <Sparkles className="h-4 w-4" />
-              Kiosk Quiz Game
-            </div>
-
-            <h1 className="font-serif text-[2.8rem] font-black leading-[1.03] text-white">
+          <section className="mt-6 rounded-[1.8rem] border border-white/15 bg-black/32 p-5 shadow-2xl backdrop-blur-sm">
+            <h1 className="font-serif text-[2.75rem] font-black leading-[1.03] text-white">
               Tìm hiểu về
               <span className="block text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
@@ -142,7 +185,60 @@ export default function Home() {
 
           <div className="flex-1" />
 
-          <section className="rounded-[2rem] border border-white/15 bg-black/45 p-5 text-center shadow-2xl backdrop-blur-md">
+          <section className="mb-4 grid gap-3">
+            <div className="grid grid-cols-[0.9fr_1.1fr] gap-3">
+              <div className="rounded-3xl border border-white/15 bg-black/45 p-4 shadow-2xl backdrop-blur-md">
+                <div className="mb-2 flex items-center gap-2 text-[#ffcd00]">
+                  <Users className="h-5 w-5" />
+                  <p className="text-xs font-black uppercase tracking-[0.18em]">
+                    Tham gia
+                  </p>
+                </div>
+                <p className="text-5xl font-black text-white">
+                  {totalPlayers}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-white/65">
+                  lượt người chơi
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/15 bg-black/45 p-4 shadow-2xl backdrop-blur-md">
+                <div className="mb-3 flex items-center gap-2 text-[#ffcd00]">
+                  <Trophy className="h-5 w-5" />
+                  <p className="text-xs font-black uppercase tracking-[0.18em]">
+                    Bảng xếp hạng
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {leaderboard.length > 0 ? (
+                    leaderboard.slice(0, 3).map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-2xl bg-white/10 px-3 py-2"
+                      >
+                        <span className="text-sm font-black text-[#ffcd00]">
+                          #{index + 1}
+                        </span>
+                        <span className="truncate text-sm font-bold text-white">
+                          {entry.playerName}
+                        </span>
+                        <span className="text-xs font-black text-white/80">
+                          {entry.score}/{entry.totalQuestions} ·{" "}
+                          {formatDuration(entry.durationMs)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="rounded-2xl bg-white/10 px-3 py-3 text-sm font-semibold text-white/70">
+                      Chưa có dữ liệu xếp hạng.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] border border-white/15 bg-black/50 p-5 text-center shadow-2xl backdrop-blur-md">
             <p className="text-sm font-bold uppercase tracking-[0.24em] text-white/70">
               Chạm để bắt đầu thử thách
             </p>
@@ -160,31 +256,6 @@ export default function Home() {
               thưởng.
             </p>
           </section>
-
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            {kioskImages.map((image, index) => (
-              <button
-                key={image.src}
-                type="button"
-                onClick={() => setActiveImageIndex(index)}
-                className={`relative h-20 overflow-hidden rounded-2xl border transition ${
-                  activeImageIndex === index
-                    ? "border-[#ffcd00]"
-                    : "border-white/20"
-                }`}
-                aria-label={`Hiển thị ảnh ${index + 1}`}
-              >
-                <Image
-                  src={image.src}
-                  alt={image.alt}
-                  fill
-                  className="object-cover"
-                  sizes="33vw"
-                />
-                <div className="absolute inset-0 bg-black/20" />
-              </button>
-            ))}
-          </div>
         </div>
       </section>
     </main>
