@@ -34,3 +34,13 @@ body {
     transform: translateY(-50%);
   }
 }
+
+@keyframes kioskMarquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}

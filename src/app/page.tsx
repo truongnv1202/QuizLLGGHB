@@ -44,6 +44,8 @@ const introLines = [
   "Hãy tham gia thử thách để tìm hiểu những dấu mốc, nhiệm vụ và niềm tự hào của lực lượng GGHB Việt Nam.",
 ];
 
+const SLIDE_INTERVAL_MS = 5200;
+
 async function fetchJson<T>(url: string) {
   const response = await fetch(url);
   const payload = (await response.json()) as ApiResponse<T>;
@@ -74,7 +76,7 @@ export default function Home() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       setActiveImageIndex((index) => (index + 1) % kioskImages.length);
-    }, 5200);
+    }, SLIDE_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
   }, []);
@@ -152,20 +154,16 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(150deg,rgba(74,163,223,0.2),transparent_40%,rgba(218,37,29,0.18))]" />
 
         <div className="relative z-10 flex h-full flex-col px-6 py-7">
-          <header className="flex items-start justify-between gap-4">
-            <div className="relative h-16 w-32 overflow-hidden rounded-full border-2 border-[#ffcd00] bg-black/70 shadow-2xl backdrop-blur">
+          <header className="flex items-start">
+            <div className="relative h-16 w-36">
               <Image
                 src="/logo-gghb.png"
                 alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
                 fill
                 priority
-                className="object-contain p-2"
-                sizes="128px"
+                className="object-contain"
+                sizes="144px"
               />
-            </div>
-
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/60 bg-[#4aa3df] text-base font-black shadow-2xl">
-              UN
             </div>
           </header>
 
@@ -178,15 +176,15 @@ export default function Home() {
               <span className="block text-[#ffcd00]">Việt Nam</span>
             </h1>
 
-            <div className="mt-5 h-32 overflow-hidden rounded-2xl border border-white/10 bg-white/10 p-4">
-              <div className="animate-[kioskTextScroll_20s_linear_infinite] space-y-4">
+            <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-white/10 py-4">
+              <div className="animate-[kioskMarquee_5.2s_linear_infinite] whitespace-nowrap">
                 {[...introLines, ...introLines].map((line, index) => (
-                  <p
+                  <span
                     key={`${line}-${index}`}
-                    className="text-base font-semibold leading-7 text-white/88"
+                    className="mx-6 inline-block text-base font-semibold text-white/88"
                   >
                     {line}
-                  </p>
+                  </span>
                 ))}
               </div>
             </div>
@@ -194,7 +192,17 @@ export default function Home() {
 
           <div className="flex-1" />
 
-          <section className="space-y-3 rounded-[1.8rem] border border-white/15 bg-black/48 p-4 shadow-2xl backdrop-blur-md">
+          <button
+            type="button"
+            onClick={startGame}
+            disabled={isStarting}
+            className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#da251d] px-8 py-5 text-2xl font-black uppercase tracking-[0.04em] text-white shadow-[0_18px_60px_rgba(218,37,29,0.45)] transition hover:bg-[#b91d17] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isStarting ? "Đang bắt đầu..." : "Tham Gia Tìm Hiểu"}
+            <ChevronRight className="h-7 w-7 transition group-hover:translate-x-1" />
+          </button>
+
+          <section className="mt-4 space-y-3 rounded-[1.8rem] border border-white/15 bg-black/48 p-4 shadow-2xl backdrop-blur-md">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
                 <div className="mb-2 flex items-center gap-2 text-[#ffcd00]">
@@ -259,15 +267,6 @@ export default function Home() {
             </div>
           </section>
 
-          <button
-            type="button"
-            onClick={startGame}
-            disabled={isStarting}
-            className="group mt-4 inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#da251d] px-8 py-5 text-2xl font-black uppercase tracking-[0.04em] text-white shadow-[0_18px_60px_rgba(218,37,29,0.45)] transition hover:bg-[#b91d17] disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isStarting ? "Đang bắt đầu..." : "Tham Gia Tìm Hiểu"}
-            <ChevronRight className="h-7 w-7 transition group-hover:translate-x-1" />
-          </button>
         </div>
       </section>
     </main>
