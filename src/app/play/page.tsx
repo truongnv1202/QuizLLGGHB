@@ -10,11 +10,12 @@ import {
   Trophy,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
 
 const ANSWER_DELAY_MS = 3000;
+const INACTIVITY_CHECK_INTERVAL_MS = 1000;
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
@@ -240,6 +241,8 @@ export default function PlayPage() {
     explanation: string | null;
   } | null>(null);
   const [showFireworks, setShowFireworks] = useState(false);
+  const hasReturnedToKioskRef = useRef(false);
+  const lastActivityAtRef = useRef(new Date().getTime());
 
   const currentQuestion = questions[currentQuestionIndex];
   const progressText = useMemo(
@@ -261,44 +264,50 @@ export default function PlayPage() {
   }, [loadBackgrounds, loadQuestions]);
 
   useEffect(() => {
-    let timeoutId: number | undefined;
+    hasReturnedToKioskRef.current = false;
+    lastActivityAtRef.current = new Date().getTime();
 
     const goToKioskScreen = () => {
+      if (hasReturnedToKioskRef.current) {
+        return;
+      }
+
+      hasReturnedToKioskRef.current = true;
       resetGame();
       router.replace("/");
     };
 
-    const resetInactivityTimer = () => {
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-
-      timeoutId = window.setTimeout(goToKioskScreen, INACTIVITY_TIMEOUT_MS);
+    const markActivity = () => {
+      lastActivityAtRef.current = new Date().getTime();
     };
 
     const activityEvents = [
       "pointerdown",
-      "pointermove",
       "mousedown",
-      "mousemove",
+      "click",
       "touchstart",
       "keydown",
     ] as const;
 
-    resetInactivityTimer();
     activityEvents.forEach((eventName) => {
-      window.addEventListener(eventName, resetInactivityTimer, {
+      window.addEventListener(eventName, markActivity, {
         passive: true,
       });
     });
 
-    return () => {
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
+    const intervalId = window.setInterval(() => {
+      const inactiveMs = new Date().getTime() - lastActivityAtRef.current;
+
+      if (inactiveMs >= INACTIVITY_TIMEOUT_MS) {
+        goToKioskScreen();
       }
+    }, INACTIVITY_CHECK_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(intervalId);
 
       activityEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, resetInactivityTimer);
+        window.removeEventListener(eventName, markActivity);
       });
     };
   }, [resetGame, router]);
