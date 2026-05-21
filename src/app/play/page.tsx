@@ -194,7 +194,9 @@ export default function PlayPage() {
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [levelSummary, setLevelSummary] = useState<string | null>(null);
-  const [gameStartedAt, setGameStartedAt] = useState(() => Date.now());
+  const [gameStartedAt, setGameStartedAt] = useState(() =>
+    new Date().getTime(),
+  );
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
   const [hasSavedLeaderboard, setHasSavedLeaderboard] = useState(false);
 
@@ -219,7 +221,7 @@ export default function PlayPage() {
     setIsAdvancing(false);
     setIsGameOver(false);
     setLevelSummary(null);
-    setGameStartedAt(Date.now());
+    setGameStartedAt(new Date().getTime());
     setTotalCorrectAnswers(0);
     setHasSavedLeaderboard(false);
     await loadQuestions(1);
@@ -307,10 +309,11 @@ export default function PlayPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-6 text-white sm:px-8">
-      <BackgroundSlider backgrounds={backgrounds} />
+    <main className="flex min-h-[100svh] items-center justify-center overflow-hidden bg-black text-white">
+      <section className="relative h-[100svh] w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-4 py-4">
+        <BackgroundSlider backgrounds={backgrounds} />
 
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-7xl flex-col gap-8">
+      <div className="relative z-10 mx-auto flex h-full flex-col gap-4">
         <LogoBar />
 
         <AnimatePresence mode="wait">
@@ -325,7 +328,7 @@ export default function PlayPage() {
           ) : levelSummary ? (
             <motion.section
               key="level-pass"
-              className="mx-auto flex min-h-[520px] max-w-3xl flex-col items-center justify-center rounded-[2rem] border border-[#4aa3df]/30 bg-[#071a2f]/90 p-8 text-center shadow-2xl backdrop-blur-xl"
+              className="mx-auto flex min-h-[70svh] w-full flex-col items-center justify-center rounded-[2rem] border border-[#4aa3df]/30 bg-[#071a2f]/90 p-8 text-center shadow-2xl backdrop-blur-xl"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
@@ -348,22 +351,22 @@ export default function PlayPage() {
           ) : (
             <motion.section
               key="question"
-              className="grid flex-1 items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]"
+              className="flex flex-1 flex-col gap-4 overflow-y-auto pb-2"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <aside className="rounded-[2rem] border border-white/15 bg-[#1f2b1f]/75 p-6 shadow-2xl backdrop-blur-xl">
-                <div className="mb-6 flex items-center justify-between gap-4">
+              <aside className="rounded-[1.6rem] border border-white/15 bg-[#1f2b1f]/75 p-4 shadow-2xl backdrop-blur-xl">
+                <div className="mb-4 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#ffcd00]">
                       Quiz Game
                     </p>
-                    <h1 className="mt-2 text-4xl font-black text-white md:text-5xl">
+                    <h1 className="mt-1 text-3xl font-black text-white">
                       Level {currentLevel}
                     </h1>
                   </div>
-                  <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-4 py-3 text-right">
+                  <div className="rounded-2xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-4 py-2 text-right">
                     <p className="text-xs font-bold uppercase text-[#9bd8ff]">
                       Câu hỏi
                     </p>
@@ -385,21 +388,22 @@ export default function PlayPage() {
                   />
                 </div>
 
-                <div className="mt-6 rounded-3xl border border-white/10 bg-black/20 p-5">
-                  <p className="text-sm font-semibold text-white/70">
-                    Điểm level hiện tại
-                  </p>
-                  <p className="mt-1 text-3xl font-black text-[#ffcd00]">
-                    {score}
-                  </p>
-                  <p className="mt-4 text-sm leading-6 text-white/65">
-                    Cần trả lời đúng tối thiểu 80% số câu hỏi trong level. Nếu
-                    không đạt, hệ thống sẽ tự động đưa bạn về Level 1.
+                <div className="mt-4 grid grid-cols-[auto_1fr] items-center gap-4 rounded-3xl border border-white/10 bg-black/20 p-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">
+                      Điểm level
+                    </p>
+                    <p className="mt-1 text-3xl font-black text-[#ffcd00]">
+                      {score}
+                    </p>
+                  </div>
+                  <p className="text-sm leading-6 text-white/65">
+                    Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Level 1.
                   </p>
                 </div>
               </aside>
 
-              <section className="rounded-[2rem] border border-white/15 bg-white/95 p-5 text-[#071a2f] shadow-2xl backdrop-blur-xl md:p-8">
+              <section className="rounded-[1.8rem] border border-white/15 bg-white/95 p-5 text-[#071a2f] shadow-2xl backdrop-blur-xl">
                 {status === "loading" ? (
                   <div className="flex min-h-[460px] items-center justify-center text-lg font-bold text-[#0b4f8a]">
                     Đang tải câu hỏi...
@@ -435,11 +439,11 @@ export default function PlayPage() {
                       <p className="mb-3 text-sm font-black uppercase tracking-[0.25em] text-[#da251d]">
                         Câu hỏi {currentQuestionIndex + 1}
                       </p>
-                      <h2 className="text-2xl font-black leading-tight text-[#0b4f8a] md:text-4xl">
+                      <h2 className="text-2xl font-black leading-tight text-[#0b4f8a]">
                         {currentQuestion.content}
                       </h2>
 
-                      <div className="mt-8 grid gap-4">
+                      <div className="mt-7 grid gap-3">
                         {currentQuestion.answers.map((answer, index) => {
                           const isSelected = selectedAnswerId === answer.id;
                           const isAlreadyChosen =
@@ -451,7 +455,7 @@ export default function PlayPage() {
                               type="button"
                               onClick={() => handleAnswerClick(answer.id)}
                               disabled={isAdvancing || status === "submitting"}
-                              className={`flex items-center gap-4 rounded-2xl border px-5 py-4 text-left font-bold shadow-sm transition ${
+                              className={`flex min-h-16 items-center gap-4 rounded-2xl border px-5 py-4 text-left text-base font-bold shadow-sm transition ${
                                 isSelected || isAlreadyChosen
                                   ? "border-[#ffcd00] bg-[#ffcd00] text-[#071a2f]"
                                   : "border-slate-200 bg-white text-slate-800 hover:border-[#4aa3df] hover:bg-[#e9f7ff]"
@@ -491,6 +495,7 @@ export default function PlayPage() {
           )}
         </AnimatePresence>
       </div>
+      </section>
     </main>
   );
 }
