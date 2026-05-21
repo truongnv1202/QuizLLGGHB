@@ -9,11 +9,13 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
 
 const ANSWER_DELAY_MS = 3000;
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
@@ -201,6 +203,7 @@ function VictoryPanel({
 }
 
 export default function PlayPage() {
+  const router = useRouter();
   const {
     answers,
     backgrounds,
@@ -256,6 +259,49 @@ export default function PlayPage() {
     void loadBackgrounds();
     void loadQuestions(1);
   }, [loadBackgrounds, loadQuestions]);
+
+  useEffect(() => {
+    let timeoutId: number | undefined;
+
+    const goToKioskScreen = () => {
+      resetGame();
+      router.replace("/");
+    };
+
+    const resetInactivityTimer = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(goToKioskScreen, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents = [
+      "pointerdown",
+      "pointermove",
+      "mousedown",
+      "mousemove",
+      "touchstart",
+      "keydown",
+    ] as const;
+
+    resetInactivityTimer();
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, resetInactivityTimer, {
+        passive: true,
+      });
+    });
+
+    return () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
+  }, [resetGame, router]);
 
   async function restartFromLevelOne() {
     resetGame();
