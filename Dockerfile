@@ -24,7 +24,7 @@ CMD ["npx", "prisma", "db", "push"]
 FROM base AS runner
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=6000
 ENV HOSTNAME=0.0.0.0
 
 RUN groupadd --system --gid 1001 nodejs \
@@ -39,6 +39,6 @@ RUN mkdir -p /app/public/uploads \
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 6000
 
 CMD ["node", "server.js"]
