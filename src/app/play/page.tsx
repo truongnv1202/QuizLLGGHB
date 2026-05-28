@@ -21,16 +21,24 @@ const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
   {
-    id: "fallback-salute",
-    imageUrl: "/kiosk/peacekeepers-salute.png",
+    id: "fallback-salute-vinh",
+    imageUrl: "/kiosk/peacekeeper-salute-vinh.png",
   },
   {
-    id: "fallback-formation",
-    imageUrl: "/kiosk/peacekeepers-formation.png",
+    id: "fallback-ministry",
+    imageUrl: "/kiosk/peacekeepers-ministry.png",
   },
   {
-    id: "fallback-flags",
-    imageUrl: "/kiosk/vietnam-un-flags.png",
+    id: "fallback-map-training",
+    imageUrl: "/kiosk/peacekeepers-map-training.png",
+  },
+  {
+    id: "fallback-welcome",
+    imageUrl: "/kiosk/peacekeepers-welcome.png",
+  },
+  {
+    id: "fallback-south-sudan",
+    imageUrl: "/kiosk/peacekeepers-south-sudan.png",
   },
 ];
 

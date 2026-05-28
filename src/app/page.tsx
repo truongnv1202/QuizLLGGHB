@@ -24,16 +24,24 @@ type ApiResponse<T> = {
 
 const kioskImages = [
   {
-    src: "/kiosk/peacekeepers-salute.png",
-    alt: "Nữ chiến sĩ Việt Nam đội mũ nồi xanh chào điều lệnh",
+    src: "/kiosk/peacekeeper-salute-vinh.png",
+    alt: "Nữ sĩ quan gìn giữ hòa bình Việt Nam chào điều lệnh",
   },
   {
-    src: "/kiosk/peacekeepers-formation.png",
-    alt: "Đội hình nữ chiến sĩ gìn giữ hòa bình Việt Nam",
+    src: "/kiosk/peacekeepers-ministry.png",
+    alt: "Lực lượng gìn giữ hòa bình Việt Nam tại Bộ Công an",
   },
   {
-    src: "/kiosk/vietnam-un-flags.png",
-    alt: "Quốc kỳ Việt Nam và cờ Liên Hợp Quốc",
+    src: "/kiosk/peacekeepers-map-training.png",
+    alt: "Chiến sĩ gìn giữ hòa bình Việt Nam trao đổi trên bản đồ nhiệm vụ",
+  },
+  {
+    src: "/kiosk/peacekeepers-welcome.png",
+    alt: "Lãnh đạo gặp mặt lực lượng gìn giữ hòa bình Việt Nam",
+  },
+  {
+    src: "/kiosk/peacekeepers-south-sudan.png",
+    alt: "Lực lượng gìn giữ hòa bình Việt Nam tại Nam Sudan",
   },
 ];
 
