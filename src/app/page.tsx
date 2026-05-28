@@ -161,9 +161,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#04111f]/82 via-[#04111f]/10 to-[#04111f]/94" />
         <div className="absolute inset-0 bg-[linear-gradient(150deg,rgba(74,163,223,0.2),transparent_40%,rgba(218,37,29,0.18))]" />
 
-        <div className="relative z-10 flex h-full flex-col px-6 py-7">
+        <div className="relative z-10 flex h-full min-h-0 flex-col px-4 py-5 sm:px-6 sm:py-7">
           <header className="flex items-start">
-            <div className="relative h-16 w-36">
+            <div className="relative h-12 w-28 sm:h-16 sm:w-36">
               <Image
                 src="/logo-gghb.png"
                 alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
@@ -175,8 +175,8 @@ export default function Home() {
             </div>
           </header>
 
-          <section className="mt-5 rounded-[1.8rem] border border-white/15 bg-black/38 p-5 shadow-2xl backdrop-blur-md">
-            <h1 className="font-serif text-[2.75rem] font-black leading-[1.03] text-white">
+          <section className="mt-4 rounded-[1.5rem] border border-white/15 bg-black/38 p-4 shadow-2xl backdrop-blur-md sm:mt-5 sm:rounded-[1.8rem] sm:p-5">
+            <h1 className="font-serif text-[clamp(2rem,9vw,2.75rem)] font-black leading-[1.03] text-white">
               Tìm hiểu về
               <span className="block text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
@@ -184,7 +184,7 @@ export default function Home() {
               <span className="block text-[#ffcd00]">Việt Nam</span>
             </h1>
 
-            <div className="mt-5 overflow-hidden rounded-2xl border border-white/10 bg-white/10 py-4">
+            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/10 py-3 sm:mt-5 sm:py-4">
               <div className="kiosk-marquee-track">
                 {[0, 1].map((groupIndex) => (
                   <div
@@ -195,7 +195,7 @@ export default function Home() {
                     {introLines.map((line, index) => (
                       <span
                         key={`${groupIndex}-${line}-${index}`}
-                        className="mx-6 inline-block text-base font-semibold text-white/88"
+                        className="mx-4 inline-block text-sm font-semibold text-white/88 sm:mx-6 sm:text-base"
                       >
                         {line}
                       </span>
@@ -212,13 +212,13 @@ export default function Home() {
             type="button"
             onClick={startGame}
             disabled={isStarting}
-            className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-[#da251d] px-8 py-5 text-2xl font-black uppercase tracking-[0.04em] text-white shadow-[0_18px_60px_rgba(218,37,29,0.45)] transition hover:bg-[#b91d17] disabled:cursor-not-allowed disabled:opacity-70"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#da251d] px-7 py-4 text-xl font-black uppercase tracking-[0.04em] text-white shadow-[0_18px_60px_rgba(218,37,29,0.45)] transition hover:bg-[#b91d17] disabled:cursor-not-allowed disabled:opacity-70 sm:gap-3 sm:px-8 sm:py-5 sm:text-2xl"
           >
             {isStarting ? "Đang bắt đầu..." : "Tham Gia"}
-            <ChevronRight className="h-7 w-7 transition group-hover:translate-x-1" />
+            <ChevronRight className="h-6 w-6 transition group-hover:translate-x-1 sm:h-7 sm:w-7" />
           </button>
 
-          <p className="mt-3 flex items-center justify-center gap-2 text-sm font-semibold text-white/75">
+          <p className="mt-2 flex items-center justify-center gap-2 text-xs font-semibold text-white/75 sm:mt-3 sm:text-sm">
             <Users className="h-4 w-4 text-[#ffcd00]" />
             Số lượng người chơi:{" "}
             <span className="font-black text-[#ffcd00]">
@@ -226,23 +226,23 @@ export default function Home() {
             </span>
           </p>
 
-          <section className="mt-3 rounded-[1.8rem] border border-white/15 bg-black/48 p-4 shadow-2xl backdrop-blur-md">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffcd00]">
+          <section className="mt-2 rounded-[1.5rem] border border-white/15 bg-black/48 p-3 shadow-2xl backdrop-blur-md sm:mt-3 sm:rounded-[1.8rem] sm:p-4">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-3 sm:p-4">
+              <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#ffcd00] sm:text-xs sm:tracking-[0.2em]">
                   Bảng xếp hạng
                 </p>
-                <p className="text-xs font-semibold text-white/55">
+                <p className="text-[0.68rem] font-semibold text-white/55 sm:text-xs">
                   Đúng nhiều nhất, nhanh nhất
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {leaderboard.length > 0 ? (
                   leaderboard.map((entry, index) => (
                     <div
                       key={entry.id}
-                      className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-2 rounded-xl bg-black/22 px-3 py-2 text-sm"
+                      className={`${index >= 3 ? "hidden sm:grid" : "grid"} grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-xl bg-black/22 px-2.5 py-1.5 text-xs sm:grid-cols-[2.5rem_1fr_auto] sm:px-3 sm:py-2 sm:text-sm`}
                     >
                       <span className="font-black text-[#ffcd00]">
                         #{index + 1}
