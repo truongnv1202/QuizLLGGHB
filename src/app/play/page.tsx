@@ -18,6 +18,7 @@ import { type GameBackground, useGameStore } from "@/store/gameStore";
 const ANSWER_DELAY_MS = 3000;
 const INACTIVITY_CHECK_INTERVAL_MS = 1000;
 const INACTIVITY_TIMEOUT_MS = 15 * 1000;
+const PREVIEW_WINNER_DURATION_MS = 5 * 60 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
@@ -484,7 +485,7 @@ export default function PlayPage() {
         playerName,
         score: 40,
         totalQuestions: 40,
-        durationMs: 0,
+        durationMs: PREVIEW_WINNER_DURATION_MS,
       }),
     });
 
