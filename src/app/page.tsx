@@ -240,10 +240,10 @@ export default function Home() {
 
               <div className="space-y-1.5 sm:space-y-2">
                 {leaderboard.length > 0 ? (
-                  leaderboard.slice(0, 5).map((entry, index) => (
+                  leaderboard.slice(0, 1).map((entry, index) => (
                     <div
                       key={entry.id}
-                      className={`${index >= 3 ? "hidden sm:grid" : "grid"} grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-xl bg-black/22 px-2.5 py-1.5 text-xs sm:grid-cols-[2.5rem_1fr_auto] sm:px-3 sm:py-2 sm:text-sm`}
+                      className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-xl bg-black/22 px-2.5 py-1.5 text-xs sm:grid-cols-[2.5rem_1fr_auto] sm:px-3 sm:py-2 sm:text-sm"
                     >
                       <span className="font-black text-[#ffcd00]">
                         #{index + 1}
