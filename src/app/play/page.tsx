@@ -7,8 +7,8 @@ import {
   Medal,
   RotateCcw,
   Sparkles,
-  Trophy,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -163,41 +163,35 @@ function GameOverPanel({ onRestart }: { onRestart: () => void }) {
   );
 }
 
-function VictoryPanel({
-  rewardCode,
-  onRestart,
-}: {
-  rewardCode: string | null;
-  onRestart: () => void;
-}) {
+function VictoryPanel({ onRestart }: { onRestart: () => void }) {
   return (
     <motion.section
-      className="mx-auto flex min-h-[560px] max-w-4xl flex-col items-center justify-center rounded-[2rem] border border-[#ffcd00]/40 bg-[#081521]/90 p-8 text-center text-white shadow-2xl backdrop-blur-xl"
+      className="mx-auto flex min-h-0 flex-1 w-full max-w-4xl flex-col items-center justify-center rounded-[2rem] border border-[#ffcd00]/40 bg-[#081521]/92 p-6 text-center text-white shadow-2xl backdrop-blur-xl sm:p-8"
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#ffcd00]/50 bg-[#ffcd00]/15">
-        <Trophy className="h-10 w-10 text-[#ffcd00]" />
+      <div className="relative mb-6 h-28 w-full max-w-[18rem] sm:h-36 sm:max-w-[24rem]">
+        <Image
+          src="/logo-gghb.png"
+          alt="Logo Lực lượng Gìn giữ Hòa bình Việt Nam"
+          fill
+          priority
+          className="object-contain drop-shadow-[0_0_28px_rgba(255,205,0,0.28)]"
+          sizes="384px"
+        />
       </div>
-      <p className="mb-3 text-sm font-bold uppercase tracking-[0.32em] text-[#4aa3df]">
-        Victory
+      <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-[#ffcd00] sm:text-sm">
+        Chúc mừng
       </p>
-      <h1 className="text-4xl font-black md:text-6xl">
-        Hoàn thành thử thách GGHB VN
+      <h1 className="text-3xl font-black leading-tight sm:text-5xl">
+        Bạn đã hoàn thành xuất sắc thử thách
       </h1>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-white/75">
-        Hãy giữ màn hình này để chụp ảnh Photobooth cùng mã phần thưởng.
+      <p className="mt-5 max-w-2xl text-base leading-7 text-white/78 sm:text-lg sm:leading-8">
+        Trân trọng chúc mừng bạn đã vượt qua toàn bộ 5 cấp độ tìm hiểu về
+        Lực lượng Gìn giữ Hòa bình Việt Nam. Cảm ơn bạn đã tham gia lan tỏa
+        tinh thần trách nhiệm, nhân văn và yêu chuộng hòa bình của Việt Nam.
       </p>
-
-      <div className="mt-8 rounded-3xl border border-[#ffcd00]/50 bg-white px-8 py-6 text-[#071a2f] shadow-[0_0_60px_rgba(255,205,0,0.25)]">
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.34em] text-[#8b6f00]">
-          Reward Code
-        </p>
-        <div className="font-mono text-6xl font-black tracking-[0.22em] md:text-8xl">
-          {rewardCode ?? "------"}
-        </div>
-      </div>
 
       <button
         type="button"
@@ -216,7 +210,6 @@ export default function PlayPage() {
   const {
     answers,
     backgrounds,
-    createRewardCode,
     currentLevel,
     error,
     loadBackgrounds,
@@ -224,7 +217,6 @@ export default function PlayPage() {
     nextLevel,
     questions,
     resetGame,
-    rewardCode,
     selectAnswer,
     status,
     submitLevel,
@@ -454,7 +446,6 @@ export default function PlayPage() {
           const finalScore = totalCorrectAnswers + result.correctCount;
           setTotalCorrectAnswers(finalScore);
           await saveLeaderboardEntry(finalScore);
-          await createRewardCode();
           setSelectedAnswerId(null);
           setIsAdvancing(false);
           setFeedback(null);
@@ -479,7 +470,6 @@ export default function PlayPage() {
     }, ANSWER_DELAY_MS);
   }, [
     checkAnswer,
-    createRewardCode,
     currentLevel,
     currentQuestion,
     currentQuestionIndex,
@@ -548,7 +538,6 @@ export default function PlayPage() {
           ) : status === "victory" ? (
             <VictoryPanel
               key="victory"
-              rewardCode={rewardCode?.code ?? null}
               onRestart={restartFromLevelOne}
             />
           ) : levelSummary ? (
