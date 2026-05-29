@@ -18,7 +18,7 @@ function parsePositiveInteger(value: unknown) {
 export async function GET() {
   try {
     const entries = await prisma.leaderboardEntry.findMany({
-      take: 20,
+      take: 50,
       orderBy: [{ score: "desc" }, { durationMs: "asc" }, { createdAt: "asc" }],
     });
 

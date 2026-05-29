@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, Users } from "lucide-react";
+import { ChevronRight, Users, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -79,6 +79,7 @@ export default function Home() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [gameStats, setGameStats] = useState<GameStats | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const activeImage = kioskImages[activeImageIndex];
 
   useEffect(() => {
@@ -105,7 +106,7 @@ export default function Home() {
       }
 
       if (leaderboardData) {
-        setLeaderboard(leaderboardData.slice(0, 5));
+        setLeaderboard(leaderboardData.slice(0, 50));
       }
     });
 
@@ -175,8 +176,8 @@ export default function Home() {
             </div>
           </header>
 
-          <section className="mt-4 rounded-[1.5rem] border border-white/15 bg-black/38 p-4 shadow-2xl backdrop-blur-md sm:mt-5 sm:rounded-[1.8rem] sm:p-5">
-            <h1 className="font-serif text-[clamp(2rem,9vw,2.75rem)] font-black leading-[1.03] text-white">
+          <section className="mt-3 rounded-[1.25rem] border border-white/15 bg-black/34 p-3 shadow-2xl backdrop-blur-md sm:mt-5 sm:rounded-[1.8rem] sm:p-5">
+            <h1 className="font-serif text-[clamp(1.55rem,7.5vw,2.1rem)] font-black leading-[1.03] text-white sm:text-[2.75rem]">
               Tìm hiểu về
               <span className="block text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
@@ -184,7 +185,7 @@ export default function Home() {
               <span className="block text-[#ffcd00]">Việt Nam</span>
             </h1>
 
-            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/10 py-3 sm:mt-5 sm:py-4">
+            <div className="mt-3 overflow-hidden rounded-xl border border-white/10 bg-white/10 py-2.5 sm:mt-5 sm:rounded-2xl sm:py-4">
               <div className="kiosk-marquee-track">
                 {[0, 1].map((groupIndex) => (
                   <div
@@ -195,7 +196,7 @@ export default function Home() {
                     {introLines.map((line, index) => (
                       <span
                         key={`${groupIndex}-${line}-${index}`}
-                        className="mx-4 inline-block text-sm font-semibold text-white/88 sm:mx-6 sm:text-base"
+                        className="mx-3 inline-block text-xs font-semibold text-white/88 sm:mx-6 sm:text-base"
                       >
                         {line}
                       </span>
@@ -239,7 +240,7 @@ export default function Home() {
 
               <div className="space-y-1.5 sm:space-y-2">
                 {leaderboard.length > 0 ? (
-                  leaderboard.map((entry, index) => (
+                  leaderboard.slice(0, 5).map((entry, index) => (
                     <div
                       key={entry.id}
                       className={`${index >= 3 ? "hidden sm:grid" : "grid"} grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-xl bg-black/22 px-2.5 py-1.5 text-xs sm:grid-cols-[2.5rem_1fr_auto] sm:px-3 sm:py-2 sm:text-sm`}
@@ -262,10 +263,84 @@ export default function Home() {
                   </p>
                 )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setIsLeaderboardOpen(true)}
+                className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-[#ffcd00]/35 bg-[#ffcd00]/12 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#ffcd00] transition hover:bg-[#ffcd00]/20"
+              >
+                Xem chi tiết bảng xếp hạng
+              </button>
             </div>
           </section>
 
         </div>
+
+        <AnimatePresence>
+          {isLeaderboardOpen ? (
+            <motion.div
+              className="absolute inset-0 z-30 flex items-center justify-center bg-black/72 px-3 py-4 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.section
+                className="flex max-h-[88svh] w-full max-w-[min(92vw,calc(88svh*9/16))] flex-col rounded-[1.5rem] border border-white/15 bg-[#071a2f]/96 p-4 text-white shadow-2xl"
+                initial={{ opacity: 0, y: 18, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 18, scale: 0.97 }}
+                transition={{ duration: 0.22 }}
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffcd00]">
+                      Bảng xếp hạng
+                    </p>
+                    <p className="mt-1 text-xs text-white/60">
+                      Hiển thị tối đa 50 người chơi
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLeaderboardOpen(false)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                    aria-label="Đóng bảng xếp hạng"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                  {leaderboard.length > 0 ? (
+                    <div className="space-y-2">
+                      {leaderboard.map((entry, index) => (
+                        <div
+                          key={entry.id}
+                          className="grid grid-cols-[2.25rem_1fr_auto] items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs"
+                        >
+                          <span className="font-black text-[#ffcd00]">
+                            #{index + 1}
+                          </span>
+                          <span className="truncate font-semibold">
+                            {entry.playerName}
+                          </span>
+                          <span className="font-black">
+                            {entry.score}/{entry.totalQuestions} ·{" "}
+                            {formatDuration(entry.durationMs)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl bg-white/10 px-3 py-4 text-center text-sm font-semibold text-white/65">
+                      Chưa có người chơi hoàn thành.
+                    </p>
+                  )}
+                </div>
+              </motion.section>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </section>
     </main>
   );
