@@ -177,9 +177,9 @@ export default function Home() {
           </header>
 
           <section className="mt-3 rounded-[1.25rem] border border-white/15 bg-black/34 p-3 shadow-2xl backdrop-blur-md sm:mt-5 sm:rounded-[1.8rem] sm:p-5">
-            <h1 className="font-serif text-[clamp(1.55rem,7.5vw,2.1rem)] font-black leading-[1.03] text-white sm:text-[2.75rem]">
-              Tìm hiểu về
-              <span className="block text-[#4aa3df]">
+            <h1 className="font-serif text-[clamp(1.35rem,6.4vw,2.1rem)] font-black leading-[1.03] text-white sm:text-[2.75rem]">
+              <span className="block">Tìm hiểu về</span>
+              <span className="block whitespace-nowrap text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
               </span>
               <span className="block text-[#ffcd00]">Việt Nam</span>
