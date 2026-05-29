@@ -225,7 +225,7 @@ export default function Home() {
               <span className="block whitespace-nowrap text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
               </span>
-              <span className="block translate-y-2.5 text-[#ffcd00]">
+              <span className="block translate-y-[5px] text-[#ffcd00]">
                 Việt Nam
               </span>
             </h1>
