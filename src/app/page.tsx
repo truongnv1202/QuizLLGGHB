@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, Users, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
 type GameStats = {
@@ -53,6 +54,8 @@ const introLines = [
 ];
 
 const SLIDE_INTERVAL_MS = 5200;
+const SECRET_TAP_TARGET = 7;
+const SECRET_WINNER_ACCESS_NAME = "nguyen truong hai";
 
 async function fetchJson<T>(url: string) {
   const response = await fetch(url);
@@ -73,6 +76,10 @@ function formatDuration(durationMs: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
+function normalizeAccessName(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export default function Home() {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
@@ -80,6 +87,10 @@ export default function Home() {
   const [gameStats, setGameStats] = useState<GameStats | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [secretTapCount, setSecretTapCount] = useState(0);
+  const [isSecretPromptOpen, setIsSecretPromptOpen] = useState(false);
+  const [secretAccessName, setSecretAccessName] = useState("");
+  const [secretError, setSecretError] = useState<string | null>(null);
   const activeImage = kioskImages[activeImageIndex];
 
   useEffect(() => {
@@ -136,6 +147,32 @@ export default function Home() {
     }
   }
 
+  function handleSecretCornerTap() {
+    setSecretTapCount((count) => {
+      const nextCount = count + 1;
+
+      if (nextCount >= SECRET_TAP_TARGET) {
+        setIsSecretPromptOpen(true);
+        setSecretError(null);
+        return 0;
+      }
+
+      return nextCount;
+    });
+  }
+
+  function submitSecretAccess(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (normalizeAccessName(secretAccessName) !== SECRET_WINNER_ACCESS_NAME) {
+      setSecretError("Tên xác nhận chưa đúng.");
+      return;
+    }
+
+    window.sessionStorage.setItem("quiz-victory-preview", "enabled");
+    router.push("/play?victory=preview");
+  }
+
   return (
     <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black text-white">
       <section className="relative h-full w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden bg-[#061526]">
@@ -161,6 +198,12 @@ export default function Home() {
 
         <div className="absolute inset-0 bg-gradient-to-b from-[#04111f]/82 via-[#04111f]/10 to-[#04111f]/94" />
         <div className="absolute inset-0 bg-[linear-gradient(150deg,rgba(74,163,223,0.2),transparent_40%,rgba(218,37,29,0.18))]" />
+        <button
+          type="button"
+          onClick={handleSecretCornerTap}
+          className="absolute right-0 top-0 z-20 h-24 w-24 bg-transparent"
+          aria-label="Khu vực thao tác ẩn"
+        />
 
         <div className="relative z-10 flex h-full min-h-0 flex-col px-4 py-5 sm:px-6 sm:py-7">
           <header className="flex items-start">
@@ -338,6 +381,75 @@ export default function Home() {
                   )}
                 </div>
               </motion.section>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+        <AnimatePresence>
+          {isSecretPromptOpen ? (
+            <motion.div
+              className="absolute inset-0 z-40 flex items-center justify-center bg-black/72 px-4 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.form
+                onSubmit={submitSecretAccess}
+                className="w-full max-w-sm rounded-[1.5rem] border border-white/15 bg-[#071a2f]/96 p-5 text-white shadow-2xl"
+                initial={{ opacity: 0, y: 18, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 18, scale: 0.97 }}
+                transition={{ duration: 0.22 }}
+              >
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffcd00]">
+                      Xác nhận truy cập
+                    </p>
+                    <p className="mt-1 text-sm text-white/65">
+                      Nhập đúng tên để mở màn chiến thắng.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSecretPromptOpen(false);
+                      setSecretAccessName("");
+                      setSecretError(null);
+                    }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                    aria-label="Đóng xác nhận"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <label className="text-xs font-bold uppercase tracking-[0.14em] text-white/60">
+                  Tên xác nhận
+                  <input
+                    value={secretAccessName}
+                    onChange={(event) => {
+                      setSecretAccessName(event.target.value);
+                      setSecretError(null);
+                    }}
+                    autoFocus
+                    className="mt-2 w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-base font-semibold text-[#071a2f] outline-none focus:border-[#ffcd00] focus:ring-2 focus:ring-[#ffcd00]/35"
+                    placeholder="Nhập tên"
+                  />
+                </label>
+
+                {secretError ? (
+                  <p className="mt-3 rounded-xl border border-red-300/30 bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
+                    {secretError}
+                  </p>
+                ) : null}
+
+                <button
+                  type="submit"
+                  className="mt-4 w-full rounded-full bg-[#ffcd00] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#071a2f] transition hover:bg-[#ffe066]"
+                >
+                  Mở màn chiến thắng
+                </button>
+              </motion.form>
             </motion.div>
           ) : null}
         </AnimatePresence>

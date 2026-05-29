@@ -10,13 +10,14 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { type GameBackground, useGameStore } from "@/store/gameStore";
 
 const ANSWER_DELAY_MS = 3000;
 const INACTIVITY_CHECK_INTERVAL_MS = 1000;
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 15 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
@@ -163,7 +164,47 @@ function GameOverPanel({ onRestart }: { onRestart: () => void }) {
   );
 }
 
-function VictoryPanel({ onRestart }: { onRestart: () => void }) {
+function VictoryPanel({
+  onRestart,
+  onSaveWinnerName,
+  showWinnerNameForm = false,
+}: {
+  onRestart: () => void;
+  onSaveWinnerName?: (playerName: string) => Promise<void>;
+  showWinnerNameForm?: boolean;
+}) {
+  const [winnerName, setWinnerName] = useState("");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function submitWinnerName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!onSaveWinnerName) {
+      return;
+    }
+
+    const trimmedName = winnerName.trim();
+
+    if (!trimmedName) {
+      setSaveError("Vui lòng nhập tên người chiến thắng.");
+      setSaveStatus("error");
+      return;
+    }
+
+    try {
+      setSaveStatus("saving");
+      setSaveError(null);
+      await onSaveWinnerName(trimmedName);
+      setSaveStatus("saved");
+    } catch {
+      setSaveError("Chưa lưu được tên người chiến thắng. Vui lòng thử lại.");
+      setSaveStatus("error");
+    }
+  }
+
   return (
     <motion.section
       className="mx-auto flex min-h-0 flex-1 w-full max-w-4xl flex-col items-center justify-center rounded-[2rem] border border-[#ffcd00]/40 bg-[#081521]/92 p-6 text-center text-white shadow-2xl backdrop-blur-xl sm:p-8"
@@ -192,6 +233,50 @@ function VictoryPanel({ onRestart }: { onRestart: () => void }) {
         Lực lượng Gìn giữ Hòa bình Việt Nam. Cảm ơn bạn đã tham gia lan tỏa
         tinh thần trách nhiệm, nhân văn và yêu chuộng hòa bình của Việt Nam.
       </p>
+
+      {showWinnerNameForm ? (
+        <form
+          onSubmit={submitWinnerName}
+          className="mt-6 w-full max-w-md rounded-3xl border border-white/15 bg-white/10 p-4 text-left"
+        >
+          <label className="text-xs font-black uppercase tracking-[0.16em] text-[#ffcd00]">
+            Tên người chiến thắng
+            <input
+              value={winnerName}
+              onChange={(event) => {
+                setWinnerName(event.target.value);
+                setSaveError(null);
+                if (saveStatus !== "saving") {
+                  setSaveStatus("idle");
+                }
+              }}
+              disabled={saveStatus === "saving" || saveStatus === "saved"}
+              className="mt-2 w-full rounded-2xl border border-white/15 bg-white px-4 py-3 text-base font-semibold text-[#071a2f] outline-none focus:border-[#ffcd00] focus:ring-2 focus:ring-[#ffcd00]/35 disabled:opacity-70"
+              placeholder="Nhập tên hiển thị trên BXH"
+            />
+          </label>
+
+          {saveError ? (
+            <p className="mt-3 rounded-xl border border-red-300/30 bg-red-500/15 px-3 py-2 text-sm font-semibold text-red-100">
+              {saveError}
+            </p>
+          ) : null}
+
+          {saveStatus === "saved" ? (
+            <p className="mt-3 rounded-xl border border-emerald-300/30 bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-100">
+              Đã lưu tên người chiến thắng vào bảng xếp hạng.
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={saveStatus === "saving" || saveStatus === "saved"}
+            className="mt-4 w-full rounded-full bg-[#ffcd00] px-5 py-3 text-sm font-black uppercase tracking-[0.14em] text-[#071a2f] transition hover:bg-[#ffe066] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {saveStatus === "saving" ? "Đang lưu..." : "Lưu tên chiến thắng"}
+          </button>
+        </form>
+      ) : null}
 
       <button
         type="button"
@@ -232,6 +317,7 @@ export default function PlayPage() {
   );
   const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0);
   const [hasSavedLeaderboard, setHasSavedLeaderboard] = useState(false);
+  const [isVictoryPreview, setIsVictoryPreview] = useState(false);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_SECONDS);
   const [feedback, setFeedback] = useState<{
     isCorrect: boolean;
@@ -261,6 +347,29 @@ export default function PlayPage() {
     void loadBackgrounds();
     void loadQuestions(1);
   }, [loadBackgrounds, loadQuestions]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasPreviewAccess =
+      searchParams.get("victory") === "preview" &&
+      window.sessionStorage.getItem("quiz-victory-preview") === "enabled";
+
+    if (hasPreviewAccess) {
+      resetGame();
+      setIsVictoryPreview(true);
+    }
+  }, [resetGame]);
+
+  useEffect(() => {
+    if (!isVictoryPreview && status !== "victory") {
+      return;
+    }
+
+    setShowFireworks(true);
+    const timeoutId = window.setTimeout(() => setShowFireworks(false), 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isVictoryPreview, status]);
 
   useEffect(() => {
     hasReturnedToKioskRef.current = false;
@@ -363,6 +472,25 @@ export default function PlayPage() {
     const audio = new Audio(isCorrect ? "/sfx/correct.mp3" : "/sfx/wrong.mp3");
     audio.volume = 0.85;
     void audio.play().catch(() => undefined);
+  }, []);
+
+  const savePreviewWinnerName = useCallback(async (playerName: string) => {
+    const response = await fetch("/api/game/leaderboard", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        playerName,
+        score: 40,
+        totalQuestions: 40,
+        durationMs: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save preview winner.");
+    }
   }, []);
 
   const checkAnswer = useCallback(async (questionId: string, answerId: string | null) => {
@@ -535,10 +663,21 @@ export default function PlayPage() {
         <AnimatePresence mode="wait">
           {isGameOver ? (
             <GameOverPanel key="game-over" onRestart={restartFromLevelOne} />
-          ) : status === "victory" ? (
+          ) : isVictoryPreview || status === "victory" ? (
             <VictoryPanel
               key="victory"
-              onRestart={restartFromLevelOne}
+              onRestart={
+                isVictoryPreview
+                  ? () => {
+                      window.sessionStorage.removeItem("quiz-victory-preview");
+                      router.replace("/");
+                    }
+                  : restartFromLevelOne
+              }
+              onSaveWinnerName={
+                isVictoryPreview ? savePreviewWinnerName : undefined
+              }
+              showWinnerNameForm={isVictoryPreview}
             />
           ) : levelSummary ? (
             <motion.section
