@@ -244,8 +244,8 @@ export default function Home() {
 
           <section className="kiosk-intro-card mt-3 rounded-[1.25rem] border border-white/15 bg-black/34 p-3 shadow-2xl backdrop-blur-md sm:mt-5 sm:rounded-[1.8rem] sm:p-5">
             <h1 className="font-serif text-[clamp(1.35rem,6.4vw,2.1rem)] font-black leading-[1.03] text-white sm:text-[2.75rem]">
-              <span className="block">Tìm hiểu về</span>
-              <span className="block whitespace-nowrap text-[#4aa3df]">
+              <span className="kiosk-title-shrink block">Tìm hiểu về</span>
+              <span className="kiosk-title-shrink block whitespace-nowrap text-[#4aa3df]">
                 Lực lượng Gìn giữ Hòa bình
               </span>
               <span className="block translate-y-[5px] text-[#ffcd00]">

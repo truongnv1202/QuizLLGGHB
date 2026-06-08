@@ -94,6 +94,10 @@ body {
     font-size: clamp(2rem, 3.6vw, 4.25rem);
   }
 
+  .kiosk-title-shrink {
+    font-size: calc(1em - 5px);
+  }
+
   .kiosk-spacer {
     flex: 1 1 auto;
     min-height: clamp(0.5rem, 2vh, 1.5rem);
@@ -113,9 +117,9 @@ body {
   }
 
   .game-background-slider-image {
-    top: auto;
+    top: 0;
     bottom: 0;
-    height: 46%;
+    height: 100%;
   }
 
   .game-background-scrim {
