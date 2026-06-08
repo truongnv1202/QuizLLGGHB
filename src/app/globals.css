@@ -55,3 +55,79 @@ body {
   display: flex;
   min-width: max-content;
 }
+
+@media (orientation: landscape) and (min-aspect-ratio: 3/2) {
+  .kiosk-stage,
+  .play-stage {
+    width: min(100vw, calc(100svh * 16 / 9));
+    height: min(100svh, calc(100vw * 9 / 16));
+    max-width: none;
+  }
+
+  .kiosk-background-scrim {
+    background: rgba(4, 17, 31, 0.85);
+  }
+
+  .kiosk-landscape-slide {
+    position: absolute;
+    inset: 0 0 0 50%;
+    z-index: 8;
+    display: block;
+    padding: clamp(1rem, 2.2vw, 2rem);
+  }
+
+  .kiosk-landscape-slide-card {
+    border-radius: clamp(1.25rem, 2.6vw, 2.5rem);
+  }
+
+  .kiosk-content {
+    width: 50%;
+    padding: clamp(1rem, 2.2vw, 2rem) clamp(1rem, 2.6vw, 2.5rem) !important;
+  }
+
+  .kiosk-intro-card {
+    margin-top: clamp(0.75rem, 1.6vh, 1.35rem) !important;
+    padding: clamp(0.9rem, 2vh, 1.5rem) !important;
+  }
+
+  .kiosk-intro-card h1 {
+    font-size: clamp(2rem, 3.6vw, 4.25rem);
+  }
+
+  .kiosk-spacer {
+    flex: 1 1 auto;
+    min-height: clamp(0.5rem, 2vh, 1.5rem);
+  }
+
+  .kiosk-leaderboard-card {
+    margin-top: clamp(0.5rem, 1.2vh, 1rem) !important;
+  }
+
+  .play-stage {
+    padding: clamp(0.75rem, 2vh, 1.5rem) !important;
+  }
+
+  .play-content {
+    width: min(100%, calc(100svh * 9 / 16));
+    max-width: 42rem;
+  }
+
+  .game-background-slider-image {
+    top: auto;
+    bottom: 0;
+    height: 46%;
+  }
+
+  .game-background-scrim {
+    background: rgba(4, 17, 31, 0.85);
+  }
+
+  .game-background-tint {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 158, 219, 0.2),
+      rgba(4, 17, 31, 0.12) 42%,
+      rgba(218, 37, 29, 0.18)
+    );
+  }
+}

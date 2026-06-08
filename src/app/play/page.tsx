@@ -75,16 +75,16 @@ function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
   }, [slides.length]);
 
   return (
-    <div className="absolute inset-0 -z-10 overflow-hidden bg-[#071a2f]">
+    <div className="game-background-slider absolute inset-0 -z-10 overflow-hidden bg-[#071a2f]">
       <AnimatePresence mode="wait">
         {activeBackground ? (
           <motion.img
             key={activeBackground.id}
             src={activeBackground.imageUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-35"
+            className="game-background-slider-image absolute inset-0 h-full w-full object-cover"
             initial={{ opacity: 0, scale: 1.04 }}
-            animate={{ opacity: 0.35, scale: 1 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 1.2, ease: "easeInOut" }}
           />
@@ -97,8 +97,8 @@ function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
           />
         )}
       </AnimatePresence>
-      <div className="absolute inset-0 bg-[#04111f]/70" />
-      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,158,219,0.22),rgba(218,37,29,0.18),rgba(255,205,0,0.16))]" />
+      <div className="game-background-scrim absolute inset-0 bg-[#04111f]/70" />
+      <div className="game-background-tint absolute inset-0 bg-[linear-gradient(135deg,rgba(0,158,219,0.22),rgba(218,37,29,0.18),rgba(255,205,0,0.16))]" />
     </div>
   );
 }
@@ -168,10 +168,12 @@ function GameOverPanel({ onRestart }: { onRestart: () => void }) {
 function VictoryPanel({
   onRestart,
   onSaveWinnerName,
+  rewardCode,
   showWinnerNameForm = false,
 }: {
   onRestart: () => void;
   onSaveWinnerName?: (playerName: string) => Promise<void>;
+  rewardCode?: string | null;
   showWinnerNameForm?: boolean;
 }) {
   const [winnerName, setWinnerName] = useState("");
@@ -234,6 +236,20 @@ function VictoryPanel({
         Lực lượng Gìn giữ Hòa bình Việt Nam. Cảm ơn bạn đã tham gia lan tỏa
         tinh thần trách nhiệm, nhân văn và yêu chuộng hòa bình của Việt Nam.
       </p>
+
+      {!showWinnerNameForm ? (
+        <div className="mt-6 w-full max-w-md rounded-3xl border border-[#ffcd00]/35 bg-[#ffcd00]/12 p-4">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ffcd00]">
+            Mã phần thưởng
+          </p>
+          <p className="mt-2 font-mono text-4xl font-black tracking-[0.24em] text-white sm:text-5xl">
+            {rewardCode ?? "......"}
+          </p>
+          <p className="mt-2 text-xs font-semibold text-white/60">
+            Chụp ảnh màn hình cùng mã này tại khu vực Photobooth.
+          </p>
+        </div>
+      ) : null}
 
       {showWinnerNameForm ? (
         <form
@@ -302,6 +318,8 @@ export default function PlayPage() {
     loadQuestions,
     nextLevel,
     questions,
+    createRewardCode,
+    rewardCode,
     resetGame,
     selectAnswer,
     status,
@@ -371,6 +389,14 @@ export default function PlayPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [isVictoryPreview, status]);
+
+  useEffect(() => {
+    if (status !== "victory" || rewardCode) {
+      return;
+    }
+
+    void createRewardCode().catch(() => undefined);
+  }, [createRewardCode, rewardCode, status]);
 
   useEffect(() => {
     hasReturnedToKioskRef.current = false;
@@ -656,11 +682,11 @@ export default function PlayPage() {
 
   return (
     <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black text-white">
-      <section className="relative h-full w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-2 py-2 sm:px-4 sm:py-4">
+      <section className="play-stage relative h-full w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-2 py-2 sm:px-4 sm:py-4">
         <BackgroundSlider backgrounds={backgrounds} />
         <FireworksOverlay isVisible={showFireworks} />
 
-      <div className="relative z-10 mx-auto flex h-full min-h-0 flex-col gap-1.5 sm:gap-4">
+      <div className="play-content relative z-10 mx-auto flex h-full min-h-0 flex-col gap-1.5 sm:gap-4">
         <AnimatePresence mode="wait">
           {isGameOver ? (
             <GameOverPanel key="game-over" onRestart={restartFromLevelOne} />
@@ -678,6 +704,7 @@ export default function PlayPage() {
               onSaveWinnerName={
                 isVictoryPreview ? savePreviewWinnerName : undefined
               }
+              rewardCode={isVictoryPreview ? null : rewardCode?.code}
               showWinnerNameForm={isVictoryPreview}
             />
           ) : levelSummary ? (
