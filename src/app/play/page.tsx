@@ -19,7 +19,8 @@ const INACTIVITY_TIMEOUT_MS = 15 * 1000;
 const PREVIEW_WINNER_DURATION_MS = 5 * 60 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
-const WINNING_CORRECT_ANSWERS = 5;
+const QUESTIONS_PER_GAME = 5;
+const WINNING_CORRECT_ANSWERS = 3;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
   {
     id: "fallback-salute-vinh",
@@ -220,9 +221,6 @@ function VictoryPanel({
           <p className="mt-2 font-mono text-4xl font-black tracking-[0.24em] text-white sm:text-5xl">
             {rewardCode ?? "......"}
           </p>
-          <p className="mt-2 text-xs font-semibold text-white/60">
-            Chụp ảnh màn hình cùng mã này tại khu vực Photobooth.
-          </p>
         </div>
       ) : null}
 
@@ -282,6 +280,45 @@ function VictoryPanel({
   );
 }
 
+function LossPanel({
+  correctCount,
+  onFinish,
+}: {
+  correctCount: number;
+  onFinish: () => void;
+}) {
+  return (
+    <motion.section
+      className="mx-auto flex min-h-0 flex-1 w-full max-w-4xl flex-col items-center justify-center rounded-[2rem] border border-red-300/30 bg-[#160d0d]/90 p-6 text-center text-white shadow-2xl backdrop-blur-xl sm:p-8"
+      initial={{ opacity: 0, y: 24, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.45 }}
+    >
+      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-red-300/40 bg-red-600/20">
+        <RotateCcw className="h-10 w-10 text-red-200" />
+      </div>
+      <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-red-200 sm:text-sm">
+        Chưa chiến thắng
+      </p>
+      <h1 className="text-3xl font-black leading-tight sm:text-5xl">
+        Rất tiếc, bạn chưa đạt 3/5 câu đúng
+      </h1>
+      <p className="mt-5 max-w-2xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
+        Kết quả của bạn là {correctCount}/{QUESTIONS_PER_GAME} câu đúng. Hãy
+        thử lại để giành phần quà từ Lực lượng Gìn giữ Hòa bình Việt Nam.
+      </p>
+      <button
+        type="button"
+        onClick={onFinish}
+        className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#da251d] px-7 py-3 font-bold text-white shadow-lg transition hover:bg-[#b91d17]"
+      >
+        <RotateCcw className="h-5 w-5" />
+        Kết thúc game
+      </button>
+    </motion.section>
+  );
+}
+
 export default function PlayPage() {
   const router = useRouter();
   const {
@@ -302,6 +339,7 @@ export default function PlayPage() {
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [hasWon, setHasWon] = useState(false);
+  const [hasLost, setHasLost] = useState(false);
   const [gameStartedAt, setGameStartedAt] = useState(() =>
     new Date().getTime(),
   );
@@ -329,6 +367,7 @@ export default function PlayPage() {
   );
   const correctProgressText = `${Math.min(totalCorrectAnswers, WINNING_CORRECT_ANSWERS)}/${WINNING_CORRECT_ANSWERS}`;
   const isVictoryVisible = hasWon || isVictoryPreview || status === "victory";
+  const isResultVisible = isVictoryVisible || hasLost;
   const isTimerWarning =
     timeLeft <= TIMER_WARNING_SECONDS &&
     !feedback &&
@@ -430,6 +469,7 @@ export default function PlayPage() {
     setSelectedAnswerId(null);
     setIsAdvancing(false);
     setHasWon(false);
+    setHasLost(false);
     setTotalCorrectAnswers(0);
     setHasSavedLeaderboard(false);
     setFeedback(null);
@@ -453,7 +493,7 @@ export default function PlayPage() {
       body: JSON.stringify({
         playerName: "Khách tham gia",
         score,
-        totalQuestions: WINNING_CORRECT_ANSWERS,
+        totalQuestions: QUESTIONS_PER_GAME,
         durationMs: new Date().getTime() - gameStartedAt,
       }),
     });
@@ -474,7 +514,7 @@ export default function PlayPage() {
       body: JSON.stringify({
         playerName,
         score: WINNING_CORRECT_ANSWERS,
-        totalQuestions: WINNING_CORRECT_ANSWERS,
+        totalQuestions: QUESTIONS_PER_GAME,
         durationMs: PREVIEW_WINNER_DURATION_MS,
       }),
     });
@@ -505,7 +545,7 @@ export default function PlayPage() {
   }, []);
 
   const completeQuestion = useCallback(async (answerId: string | null) => {
-    if (!currentQuestion || hasWon || isAdvancing || status !== "ready") {
+    if (!currentQuestion || isResultVisible || isAdvancing || status !== "ready") {
       return;
     }
 
@@ -544,29 +584,24 @@ export default function PlayPage() {
     window.setTimeout(async () => {
       const isLastQuestion = currentQuestionIndex >= questions.length - 1;
 
-      if (nextCorrectAnswers >= WINNING_CORRECT_ANSWERS) {
-        await saveLeaderboardEntry(WINNING_CORRECT_ANSWERS).catch(
-          () => undefined,
-        );
-        setHasWon(true);
+      if (isLastQuestion) {
+        const didWin = nextCorrectAnswers >= WINNING_CORRECT_ANSWERS;
+
+        if (didWin) {
+          await saveLeaderboardEntry(nextCorrectAnswers).catch(() => undefined);
+        }
+
+        setHasWon(didWin);
+        setHasLost(!didWin);
         setSelectedAnswerId(null);
         setIsAdvancing(false);
         setFeedback(null);
-        setShowFireworks(true);
+        setShowFireworks(didWin);
         setTimeLeft(QUESTION_TIME_SECONDS);
         return;
       }
 
-      if (!isLastQuestion) {
-        setCurrentQuestionIndex((index) => index + 1);
-        setSelectedAnswerId(null);
-        setIsAdvancing(false);
-        setFeedback(null);
-        setShowFireworks(false);
-        setTimeLeft(QUESTION_TIME_SECONDS);
-        return;
-      }
-
+      setCurrentQuestionIndex((index) => index + 1);
       setSelectedAnswerId(null);
       setIsAdvancing(false);
       setFeedback(null);
@@ -577,8 +612,8 @@ export default function PlayPage() {
     checkAnswer,
     currentQuestion,
     currentQuestionIndex,
-    hasWon,
     isAdvancing,
+    isResultVisible,
     playAnswerSound,
     questions.length,
     saveLeaderboardEntry,
@@ -594,7 +629,7 @@ export default function PlayPage() {
   useEffect(() => {
     if (
       !currentQuestion ||
-      hasWon ||
+      isResultVisible ||
       isAdvancing ||
       feedback ||
       status !== "ready"
@@ -621,8 +656,8 @@ export default function PlayPage() {
     completeQuestion,
     currentQuestion,
     feedback,
-    hasWon,
     isAdvancing,
+    isResultVisible,
     status,
     timeLeft,
   ]);
@@ -651,6 +686,12 @@ export default function PlayPage() {
               rewardCode={isVictoryPreview ? null : rewardCode?.code}
               showWinnerNameForm={isVictoryPreview}
             />
+          ) : hasLost ? (
+            <LossPanel
+              key="loss"
+              correctCount={totalCorrectAnswers}
+              onFinish={finishGame}
+            />
           ) : (
             <motion.section
               key="question"
@@ -666,8 +707,8 @@ export default function PlayPage() {
                       Mục tiêu chiến thắng
                     </h1>
                     <p className="mt-0.5 text-[0.62rem] leading-3.5 text-white/70 sm:mt-1 sm:text-xs sm:leading-5">
-                      Trả lời đúng 5 câu để nhận quà từ Lực lượng Gìn giữ Hòa
-                      bình Việt Nam.
+                      Hệ thống chọn ngẫu nhiên 5 câu. Trả lời đúng tối thiểu
+                      3/5 câu để chiến thắng.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2">

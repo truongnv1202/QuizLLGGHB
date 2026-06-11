@@ -72,6 +72,8 @@ const initialGameState = {
   error: null,
 };
 
+const QUESTIONS_PER_GAME = 5;
+
 function getApiError(payload: unknown, fallback: string) {
   if (
     typeof payload === "object" &&
@@ -144,7 +146,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
 
       set({
-        questions: shuffleQuestions(payload.data),
+        questions: shuffleQuestions(payload.data).slice(0, QUESTIONS_PER_GAME),
         answers: {},
         score: 0,
         status: "ready",

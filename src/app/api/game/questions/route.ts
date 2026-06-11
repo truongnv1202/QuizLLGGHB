@@ -2,6 +2,22 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 
+const QUESTIONS_PER_GAME = 5;
+
+function shuffleQuestions<T>(questions: T[]) {
+  const shuffledQuestions = [...questions];
+
+  for (let index = shuffledQuestions.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffledQuestions[index], shuffledQuestions[swapIndex]] = [
+      shuffledQuestions[swapIndex],
+      shuffledQuestions[index],
+    ];
+  }
+
+  return shuffledQuestions;
+}
+
 export async function GET() {
   try {
     const questions = await prisma.question.findMany({
@@ -25,7 +41,9 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ data: questions });
+    return NextResponse.json({
+      data: shuffleQuestions(questions).slice(0, QUESTIONS_PER_GAME),
+    });
   } catch (error) {
     console.error("Failed to fetch questions:", error);
 
