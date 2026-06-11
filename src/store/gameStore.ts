@@ -75,6 +75,7 @@ type GameState = {
   status: GameStatus;
   error: string | null;
   loadBackgrounds: () => Promise<void>;
+  loadAllQuestions: () => Promise<void>;
   loadQuestions: (level?: GameLevel) => Promise<void>;
   selectAnswer: (questionId: string, answerId: string) => void;
   submitLevel: () => Promise<LevelSubmitResult>;
@@ -85,6 +86,7 @@ type GameState = {
 
 const INITIAL_LEVEL: GameLevel = 1;
 const MAX_LEVEL: GameLevel = 5;
+const GAME_LEVELS: GameLevel[] = [1, 2, 3, 4, 5];
 
 const initialGameState = {
   currentLevel: INITIAL_LEVEL,
@@ -144,6 +146,48 @@ export const useGameStore = create<GameState>((set, get) => ({
           error instanceof Error
             ? error.message
             : "Failed to load backgrounds.",
+      });
+    }
+  },
+
+  loadAllQuestions: async () => {
+    set({
+      currentLevel: INITIAL_LEVEL,
+      questions: [],
+      answers: {},
+      rewardCode: null,
+      score: 0,
+      status: "loading",
+      error: null,
+    });
+
+    try {
+      const questionGroups = await Promise.all(
+        GAME_LEVELS.map(async (level) => {
+          const response = await fetch(`/api/game/questions/${level}`);
+          const payload = (await response.json()) as QuestionsResponse;
+
+          if (!response.ok || !Array.isArray(payload.data)) {
+            throw new Error(getApiError(payload, "Failed to load questions."));
+          }
+
+          return payload.data;
+        }),
+      );
+
+      set({
+        currentLevel: INITIAL_LEVEL,
+        questions: questionGroups.flat(),
+        answers: {},
+        score: 0,
+        status: "ready",
+        error: null,
+      });
+    } catch (error) {
+      set({
+        status: "error",
+        error:
+          error instanceof Error ? error.message : "Failed to load questions.",
       });
     }
   },

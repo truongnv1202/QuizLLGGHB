@@ -2,9 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ChevronRight,
   Clock,
-  Medal,
   RotateCcw,
   Sparkles,
 } from "lucide-react";
@@ -21,6 +19,7 @@ const INACTIVITY_TIMEOUT_MS = 15 * 1000;
 const PREVIEW_WINNER_DURATION_MS = 5 * 60 * 1000;
 const QUESTION_TIME_SECONDS = 10;
 const TIMER_WARNING_SECONDS = 3;
+const WINNING_CORRECT_ANSWERS = 5;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
   {
     id: "fallback-salute-vinh",
@@ -103,65 +102,43 @@ function BackgroundSlider({ backgrounds }: { backgrounds: GameBackground[] }) {
   );
 }
 
-function FireworksOverlay({ isVisible }: { isVisible: boolean }) {
+function FireworksOverlay({
+  isVisible,
+  isVictory = false,
+}: {
+  isVisible: boolean;
+  isVictory?: boolean;
+}) {
   if (!isVisible) {
     return null;
   }
 
   return (
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-      {Array.from({ length: 18 }).map((_, index) => (
+      {Array.from({ length: isVictory ? 42 : 18 }).map((_, index) => (
         <motion.span
           key={index}
           className="absolute h-3 w-3 rounded-full bg-[#ffcd00] shadow-[0_0_22px_rgba(255,205,0,0.95)]"
           style={{
-            left: `${12 + ((index * 17) % 76)}%`,
-            top: `${18 + ((index * 23) % 52)}%`,
+            left: `${8 + ((index * 17) % 84)}%`,
+            top: `${10 + ((index * 23) % 72)}%`,
           }}
           initial={{ opacity: 0, scale: 0 }}
           animate={{
             opacity: [0, 1, 0],
-            scale: [0, 1.9, 0.4],
-            x: [0, ((index % 5) - 2) * 34],
-            y: [0, ((index % 4) - 1.5) * 30],
+            scale: [0, isVictory ? 2.6 : 1.9, 0.4],
+            x: [0, ((index % 7) - 3) * (isVictory ? 46 : 34)],
+            y: [0, ((index % 5) - 2) * (isVictory ? 40 : 30)],
           }}
-          transition={{ duration: 1.05, ease: "easeOut" }}
+          transition={{
+            duration: isVictory ? 1.45 : 1.05,
+            ease: "easeOut",
+            repeat: isVictory ? Infinity : 0,
+            repeatDelay: 0.25 + (index % 5) * 0.08,
+          }}
         />
       ))}
     </div>
-  );
-}
-
-function GameOverPanel({ onRestart }: { onRestart: () => void }) {
-  return (
-    <motion.section
-      className="mx-auto flex min-h-[520px] max-w-3xl flex-col items-center justify-center rounded-[2rem] border border-red-300/30 bg-[#160d0d]/85 p-8 text-center text-white shadow-2xl backdrop-blur-xl"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45 }}
-    >
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-red-300/40 bg-red-600/20">
-        <RotateCcw className="h-10 w-10 text-red-200" />
-      </div>
-      <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-red-200">
-        Bạn Thua cuộc
-      </p>
-      <h1 className="text-4xl font-black text-white md:text-5xl">
-        Chưa đạt mốc 80%
-      </h1>
-      <p className="mt-4 max-w-xl text-base leading-7 text-white/75">
-        Theo luật chơi, khi không vượt qua cấp độ hiện tại, tiến trình được đặt
-        lại về Cấp độ 1. Hãy bắt đầu lại và chinh phục toàn bộ 5 cấp độ.
-      </p>
-      <button
-        type="button"
-        onClick={onRestart}
-        className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#da251d] px-7 py-3 font-bold text-white shadow-lg transition hover:bg-[#b91d17]"
-      >
-        Chơi lại từ đầu
-        <ChevronRight className="h-5 w-5" />
-      </button>
-    </motion.section>
   );
 }
 
@@ -229,12 +206,10 @@ function VictoryPanel({
         Chúc mừng
       </p>
       <h1 className="text-3xl font-black leading-tight sm:text-5xl">
-        Bạn đã hoàn thành xuất sắc thử thách
+        Chúc mừng bạn đã chiến thắng trò chơi!
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-white/78 sm:text-lg sm:leading-8">
-        Trân trọng chúc mừng bạn đã vượt qua toàn bộ 5 cấp độ tìm hiểu về
-        Lực lượng Gìn giữ Hòa bình Việt Nam. Cảm ơn bạn đã tham gia lan tỏa
-        tinh thần trách nhiệm, nhân văn và yêu chuộng hòa bình của Việt Nam.
+        Bạn được nhận 1 món quà từ Lục Lượng Gìn Giữ Hòa Bình Việt Nam!
       </p>
 
       {!showWinnerNameForm ? (
@@ -301,7 +276,7 @@ function VictoryPanel({
         className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-7 py-3 font-bold text-white transition hover:bg-white/20"
       >
         <RotateCcw className="h-5 w-5" />
-        Chơi lại
+        Kết thúc game
       </button>
     </motion.section>
   );
@@ -312,25 +287,21 @@ export default function PlayPage() {
   const {
     answers,
     backgrounds,
-    currentLevel,
     error,
+    loadAllQuestions,
     loadBackgrounds,
-    loadQuestions,
-    nextLevel,
     questions,
     createRewardCode,
     rewardCode,
     resetGame,
     selectAnswer,
     status,
-    submitLevel,
   } = useGameStore();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswerId, setSelectedAnswerId] = useState<string | null>(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
-  const [isGameOver, setIsGameOver] = useState(false);
-  const [levelSummary, setLevelSummary] = useState<string | null>(null);
+  const [hasWon, setHasWon] = useState(false);
   const [gameStartedAt, setGameStartedAt] = useState(() =>
     new Date().getTime(),
   );
@@ -356,6 +327,8 @@ export default function PlayPage() {
         : "0/0",
     [currentQuestionIndex, questions.length],
   );
+  const correctProgressText = `${Math.min(totalCorrectAnswers, WINNING_CORRECT_ANSWERS)}/${WINNING_CORRECT_ANSWERS}`;
+  const isVictoryVisible = hasWon || isVictoryPreview || status === "victory";
   const isTimerWarning =
     timeLeft <= TIMER_WARNING_SECONDS &&
     !feedback &&
@@ -364,8 +337,8 @@ export default function PlayPage() {
 
   useEffect(() => {
     void loadBackgrounds();
-    void loadQuestions(1);
-  }, [loadBackgrounds, loadQuestions]);
+    void loadAllQuestions();
+  }, [loadAllQuestions, loadBackgrounds]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -380,23 +353,27 @@ export default function PlayPage() {
   }, [resetGame]);
 
   useEffect(() => {
-    if (!isVictoryPreview && status !== "victory") {
+    if (!isVictoryVisible) {
       return;
     }
 
     setShowFireworks(true);
-    const timeoutId = window.setTimeout(() => setShowFireworks(false), 1800);
+    const timeoutId = window.setTimeout(() => {
+      if (!hasWon) {
+        setShowFireworks(false);
+      }
+    }, 1800);
 
     return () => window.clearTimeout(timeoutId);
-  }, [isVictoryPreview, status]);
+  }, [hasWon, isVictoryVisible]);
 
   useEffect(() => {
-    if (status !== "victory" || rewardCode) {
+    if (!hasWon || rewardCode) {
       return;
     }
 
     void createRewardCode().catch(() => undefined);
-  }, [createRewardCode, rewardCode, status]);
+  }, [createRewardCode, hasWon, rewardCode]);
 
   useEffect(() => {
     hasReturnedToKioskRef.current = false;
@@ -447,31 +424,18 @@ export default function PlayPage() {
     };
   }, [resetGame, router]);
 
-  async function restartFromLevelOne() {
+  function finishGame() {
     resetGame();
     setCurrentQuestionIndex(0);
     setSelectedAnswerId(null);
     setIsAdvancing(false);
-    setIsGameOver(false);
-    setLevelSummary(null);
-    setGameStartedAt(new Date().getTime());
+    setHasWon(false);
     setTotalCorrectAnswers(0);
     setHasSavedLeaderboard(false);
     setFeedback(null);
     setShowFireworks(false);
     setTimeLeft(QUESTION_TIME_SECONDS);
-    await loadQuestions(1);
-  }
-
-  async function handleNextLevel() {
-    setCurrentQuestionIndex(0);
-    setSelectedAnswerId(null);
-    setIsAdvancing(false);
-    setLevelSummary(null);
-    setFeedback(null);
-    setShowFireworks(false);
-    setTimeLeft(QUESTION_TIME_SECONDS);
-    await nextLevel();
+    router.replace("/");
   }
 
   const saveLeaderboardEntry = useCallback(async (score: number) => {
@@ -489,7 +453,7 @@ export default function PlayPage() {
       body: JSON.stringify({
         playerName: "Khách tham gia",
         score,
-        totalQuestions: 40,
+        totalQuestions: WINNING_CORRECT_ANSWERS,
         durationMs: new Date().getTime() - gameStartedAt,
       }),
     });
@@ -509,8 +473,8 @@ export default function PlayPage() {
       },
       body: JSON.stringify({
         playerName,
-        score: 40,
-        totalQuestions: 40,
+        score: WINNING_CORRECT_ANSWERS,
+        totalQuestions: WINNING_CORRECT_ANSWERS,
         durationMs: PREVIEW_WINNER_DURATION_MS,
       }),
     });
@@ -541,7 +505,7 @@ export default function PlayPage() {
   }, []);
 
   const completeQuestion = useCallback(async (answerId: string | null) => {
-    if (!currentQuestion || isAdvancing || status === "submitting") {
+    if (!currentQuestion || hasWon || isAdvancing || status !== "ready") {
       return;
     }
 
@@ -557,6 +521,10 @@ export default function PlayPage() {
 
     const answerResult = await checkAnswer(currentQuestion.id, answerId);
 
+    const isCorrect = answerResult?.isCorrect ?? false;
+    const nextCorrectAnswers =
+      totalCorrectAnswers + (isCorrect ? 1 : 0);
+
     if (answerResult) {
       playAnswerSound(answerResult.isCorrect);
       setFeedback({
@@ -567,6 +535,7 @@ export default function PlayPage() {
       });
 
       if (answerResult.isCorrect) {
+        setTotalCorrectAnswers(nextCorrectAnswers);
         setShowFireworks(true);
         window.setTimeout(() => setShowFireworks(false), 1100);
       }
@@ -574,6 +543,19 @@ export default function PlayPage() {
 
     window.setTimeout(async () => {
       const isLastQuestion = currentQuestionIndex >= questions.length - 1;
+
+      if (nextCorrectAnswers >= WINNING_CORRECT_ANSWERS) {
+        await saveLeaderboardEntry(WINNING_CORRECT_ANSWERS).catch(
+          () => undefined,
+        );
+        setHasWon(true);
+        setSelectedAnswerId(null);
+        setIsAdvancing(false);
+        setFeedback(null);
+        setShowFireworks(true);
+        setTimeLeft(QUESTION_TIME_SECONDS);
+        return;
+      }
 
       if (!isLastQuestion) {
         setCurrentQuestionIndex((index) => index + 1);
@@ -585,56 +567,23 @@ export default function PlayPage() {
         return;
       }
 
-      try {
-        const result = await submitLevel();
-
-        if (result.result === "fail") {
-          setIsGameOver(true);
-          setSelectedAnswerId(null);
-          setIsAdvancing(false);
-          setFeedback(null);
-          setTimeLeft(QUESTION_TIME_SECONDS);
-          return;
-        }
-
-        if (currentLevel === 5) {
-          const finalScore = totalCorrectAnswers + result.correctCount;
-          setTotalCorrectAnswers(finalScore);
-          await saveLeaderboardEntry(finalScore);
-          setSelectedAnswerId(null);
-          setIsAdvancing(false);
-          setFeedback(null);
-          setTimeLeft(QUESTION_TIME_SECONDS);
-          return;
-        }
-
-        setTotalCorrectAnswers((score) => score + result.correctCount);
-        setLevelSummary(
-          `Bạn đã trả lời đúng ${result.correctCount}/${result.totalQuestions} câu (${result.scorePercent}%).`,
-        );
-        setSelectedAnswerId(null);
-        setIsAdvancing(false);
-        setFeedback(null);
-        setTimeLeft(QUESTION_TIME_SECONDS);
-      } catch {
-        setSelectedAnswerId(null);
-        setIsAdvancing(false);
-        setFeedback(null);
-        setTimeLeft(QUESTION_TIME_SECONDS);
-      }
+      setSelectedAnswerId(null);
+      setIsAdvancing(false);
+      setFeedback(null);
+      setShowFireworks(false);
+      setTimeLeft(QUESTION_TIME_SECONDS);
     }, ANSWER_DELAY_MS);
   }, [
     checkAnswer,
-    currentLevel,
     currentQuestion,
     currentQuestionIndex,
+    hasWon,
     isAdvancing,
     playAnswerSound,
     questions.length,
     saveLeaderboardEntry,
     selectAnswer,
     status,
-    submitLevel,
     totalCorrectAnswers,
   ]);
 
@@ -645,10 +594,9 @@ export default function PlayPage() {
   useEffect(() => {
     if (
       !currentQuestion ||
+      hasWon ||
       isAdvancing ||
       feedback ||
-      isGameOver ||
-      levelSummary ||
       status !== "ready"
     ) {
       return;
@@ -673,9 +621,8 @@ export default function PlayPage() {
     completeQuestion,
     currentQuestion,
     feedback,
+    hasWon,
     isAdvancing,
-    isGameOver,
-    levelSummary,
     status,
     timeLeft,
   ]);
@@ -684,52 +631,26 @@ export default function PlayPage() {
     <main className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black text-white">
       <section className="play-stage relative h-full w-full max-w-[min(100vw,calc(100svh*9/16))] overflow-hidden px-2 py-2 sm:px-4 sm:py-4">
         <BackgroundSlider backgrounds={backgrounds} />
-        <FireworksOverlay isVisible={showFireworks} />
+        <FireworksOverlay
+          isVisible={showFireworks || isVictoryVisible}
+          isVictory={isVictoryVisible}
+        />
 
       <div className="play-content relative z-10 mx-auto flex h-full min-h-0 flex-col gap-1.5 sm:gap-4">
         <AnimatePresence mode="wait">
-          {isGameOver ? (
-            <GameOverPanel key="game-over" onRestart={restartFromLevelOne} />
-          ) : isVictoryPreview || status === "victory" ? (
+          {isVictoryVisible ? (
             <VictoryPanel
               key="victory"
-              onRestart={
-                isVictoryPreview
-                  ? () => {
-                      window.sessionStorage.removeItem("quiz-victory-preview");
-                      router.replace("/");
-                    }
-                  : restartFromLevelOne
-              }
+              onRestart={() => {
+                window.sessionStorage.removeItem("quiz-victory-preview");
+                finishGame();
+              }}
               onSaveWinnerName={
                 isVictoryPreview ? savePreviewWinnerName : undefined
               }
               rewardCode={isVictoryPreview ? null : rewardCode?.code}
               showWinnerNameForm={isVictoryPreview}
             />
-          ) : levelSummary ? (
-            <motion.section
-              key="level-pass"
-              className="mx-auto flex min-h-0 flex-1 w-full flex-col items-center justify-center rounded-[2rem] border border-[#4aa3df]/30 bg-[#071a2f]/90 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-            >
-              <Medal className="mb-5 h-16 w-16 text-[#ffcd00]" />
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[#4aa3df]">
-                Cấp độ {currentLevel} đã vượt qua
-              </p>
-              <h1 className="text-4xl font-black">Đủ điều kiện đi tiếp</h1>
-              <p className="mt-4 max-w-xl text-white/75">{levelSummary}</p>
-              <button
-                type="button"
-                onClick={handleNextLevel}
-                className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#4aa3df] px-7 py-3 font-bold text-[#06111f] shadow-lg transition hover:bg-[#7cc3ef]"
-              >
-                Vào cấp độ {currentLevel + 1}
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </motion.section>
           ) : (
             <motion.section
               key="question"
@@ -742,20 +663,20 @@ export default function PlayPage() {
                 <div className="mb-1.5 flex items-center justify-between gap-2 sm:mb-4 sm:gap-3">
                   <div className="min-w-0">
                     <h1 className="text-lg font-black text-white sm:text-3xl">
-                      Cấp độ {currentLevel}
+                      Mục tiêu chiến thắng
                     </h1>
                     <p className="mt-0.5 text-[0.62rem] leading-3.5 text-white/70 sm:mt-1 sm:text-xs sm:leading-5">
-                      Đạt tối thiểu 80% để đi tiếp. Không đạt sẽ quay lại Cấp độ
-                      1.
+                      Trả lời đúng 5 câu để nhận quà từ Lực lượng Gìn giữ Hòa
+                      bình Việt Nam.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <div className="rounded-xl border border-[#4aa3df]/40 bg-[#4aa3df]/15 px-2 py-1 text-right sm:rounded-2xl sm:px-3 sm:py-2">
                       <p className="text-[0.58rem] font-bold uppercase text-[#9bd8ff] sm:text-[0.65rem]">
-                        Câu hỏi
+                        Đã đúng
                       </p>
                       <p className="text-base font-black text-white sm:text-2xl">
-                        {progressText}
+                        {correctProgressText}
                       </p>
                     </div>
                     <div
@@ -780,10 +701,7 @@ export default function PlayPage() {
                   <div
                     className="h-full rounded-full bg-[#ffcd00] transition-all duration-500"
                     style={{
-                      width:
-                        questions.length > 0
-                          ? `${((currentQuestionIndex + 1) / questions.length) * 100}%`
-                          : "0%",
+                      width: `${(Math.min(totalCorrectAnswers, WINNING_CORRECT_ANSWERS) / WINNING_CORRECT_ANSWERS) * 100}%`,
                     }}
                   />
                 </div>
@@ -799,7 +717,7 @@ export default function PlayPage() {
                   <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-center">
                     <Sparkles className="mb-4 h-12 w-12 text-[#da251d]" />
                     <h2 className="text-2xl font-black">
-                      Chưa có câu hỏi cho cấp độ này
+                      Chưa có câu hỏi để hiển thị
                     </h2>
                     <p className="mt-2 max-w-md text-slate-600">
                       Hãy thêm dữ liệu câu hỏi trong Admin Dashboard trước khi
@@ -820,7 +738,7 @@ export default function PlayPage() {
                       ) : null}
 
                       <p className="mb-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#da251d] sm:mb-3 sm:text-sm sm:tracking-[0.25em]">
-                        Câu hỏi {currentQuestionIndex + 1}
+                        Câu hỏi {progressText}
                       </p>
                       <h2 className="text-base font-normal leading-snug text-[#0b4f8a] sm:text-2xl">
                         {currentQuestion.content}
@@ -848,7 +766,7 @@ export default function PlayPage() {
                               key={answer.id}
                               type="button"
                               onClick={() => handleAnswerClick(answer.id)}
-                              disabled={isAdvancing || status === "submitting"}
+                              disabled={isAdvancing}
                               className={`flex min-h-11 items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-[0.82rem] font-normal shadow-sm transition sm:min-h-16 sm:gap-4 sm:rounded-2xl sm:px-5 sm:py-4 sm:text-base ${answerColorClass} disabled:cursor-not-allowed`}
                             >
                               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0b4f8a] text-xs text-white sm:h-9 sm:w-9 sm:text-base">
@@ -859,12 +777,6 @@ export default function PlayPage() {
                           );
                         })}
                       </div>
-
-                      {status === "submitting" ? (
-                        <p className="mt-5 text-sm font-bold text-[#0b4f8a]">
-                          Đang chấm kết quả cấp độ...
-                        </p>
-                      ) : null}
 
                       {feedback ? (
                         <div
