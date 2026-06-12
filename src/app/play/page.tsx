@@ -204,19 +204,19 @@ function VictoryPanel({
         />
       </div>
       <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-[#ffcd00] sm:text-sm">
-        Chúc mừng
+        Chiến thắng
       </p>
       <h1 className="text-3xl font-black leading-tight sm:text-5xl">
-        Chúc mừng bạn đã chiến thắng trò chơi!
+        Chúc mừng bạn đã hoàn thành trò chơi!
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-white/78 sm:text-lg sm:leading-8">
-        Bạn được nhận 1 món quà từ Lục Lượng Gìn Giữ Hòa Bình Việt Nam!
+        Kết quả của bạn đã đạt điều kiện chiến thắng.
       </p>
 
       {!showWinnerNameForm ? (
         <div className="mt-6 w-full max-w-md rounded-3xl border border-[#ffcd00]/35 bg-[#ffcd00]/12 p-4">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ffcd00]">
-            Mã phần thưởng
+            Mã xác nhận
           </p>
           <p className="mt-2 font-mono text-4xl font-black tracking-[0.24em] text-white sm:text-5xl">
             {rewardCode ?? "......"}
@@ -298,14 +298,14 @@ function LossPanel({
         <RotateCcw className="h-10 w-10 text-red-200" />
       </div>
       <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-red-200 sm:text-sm">
-        Chưa chiến thắng
+        Thất bại
       </p>
       <h1 className="text-3xl font-black leading-tight sm:text-5xl">
-        Rất tiếc, bạn chưa đạt 4/5 câu đúng
+        Rất tiếc, bạn chưa hoàn thành trò chơi
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
         Kết quả của bạn là {correctCount}/{QUESTIONS_PER_GAME} câu đúng. Hãy
-        thử lại để giành phần quà từ Lực lượng Gìn giữ Hòa bình Việt Nam.
+        thử lại ở lượt chơi tiếp theo.
       </p>
       <button
         type="button"
