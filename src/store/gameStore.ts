@@ -72,8 +72,6 @@ const initialGameState = {
   error: null,
 };
 
-const QUESTIONS_PER_GAME = 5;
-
 function getApiError(payload: unknown, fallback: string) {
   if (
     typeof payload === "object" &&
@@ -85,20 +83,6 @@ function getApiError(payload: unknown, fallback: string) {
   }
 
   return fallback;
-}
-
-function shuffleQuestions(questions: GameQuestion[]) {
-  const shuffledQuestions = [...questions];
-
-  for (let index = shuffledQuestions.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffledQuestions[index], shuffledQuestions[swapIndex]] = [
-      shuffledQuestions[swapIndex],
-      shuffledQuestions[index],
-    ];
-  }
-
-  return shuffledQuestions;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -146,7 +130,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
 
       set({
-        questions: shuffleQuestions(payload.data).slice(0, QUESTIONS_PER_GAME),
+        questions: payload.data,
         answers: {},
         score: 0,
         status: "ready",

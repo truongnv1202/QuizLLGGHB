@@ -17,10 +17,10 @@ const ANSWER_DELAY_MS = 3000;
 const INACTIVITY_CHECK_INTERVAL_MS = 1000;
 const INACTIVITY_TIMEOUT_MS = 15 * 1000;
 const PREVIEW_WINNER_DURATION_MS = 5 * 60 * 1000;
-const QUESTION_TIME_SECONDS = 10;
+const QUESTION_TIME_SECONDS = 15;
 const TIMER_WARNING_SECONDS = 3;
 const QUESTIONS_PER_GAME = 5;
-const WINNING_CORRECT_ANSWERS = 3;
+const WINNING_CORRECT_ANSWERS = 4;
 const FALLBACK_BACKGROUNDS: GameBackground[] = [
   {
     id: "fallback-salute-vinh",
@@ -301,7 +301,7 @@ function LossPanel({
         Chưa chiến thắng
       </p>
       <h1 className="text-3xl font-black leading-tight sm:text-5xl">
-        Rất tiếc, bạn chưa đạt 3/5 câu đúng
+        Rất tiếc, bạn chưa đạt 4/5 câu đúng
       </h1>
       <p className="mt-5 max-w-2xl text-base leading-7 text-white/75 sm:text-lg sm:leading-8">
         Kết quả của bạn là {correctCount}/{QUESTIONS_PER_GAME} câu đúng. Hãy
@@ -365,7 +365,7 @@ export default function PlayPage() {
         : "0/0",
     [currentQuestionIndex, questions.length],
   );
-  const correctProgressText = `${Math.min(totalCorrectAnswers, WINNING_CORRECT_ANSWERS)}/${WINNING_CORRECT_ANSWERS}`;
+  const correctProgressText = `${Math.min(totalCorrectAnswers, QUESTIONS_PER_GAME)}/${QUESTIONS_PER_GAME}`;
   const isVictoryVisible = hasWon || isVictoryPreview || status === "victory";
   const isResultVisible = isVictoryVisible || hasLost;
   const isTimerWarning =
@@ -708,7 +708,7 @@ export default function PlayPage() {
                     </h1>
                     <p className="mt-0.5 text-[0.62rem] leading-3.5 text-white/70 sm:mt-1 sm:text-xs sm:leading-5">
                       Hệ thống chọn ngẫu nhiên 5 câu. Trả lời đúng tối thiểu
-                      3/5 câu để chiến thắng.
+                      4/5 câu để chiến thắng.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
